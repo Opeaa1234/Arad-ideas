@@ -59,7 +59,7 @@ The current game catalogue lives in `data/game-data.json`.
 - `places` contains the location details and trivia: three questions for every route stop and one for every side quest, taken from the team's final lists in `data/source/` (Locatii_Importante.txt, SideQuest.txt). Answer positions are mixed, so the right answer isn't always first.
 - Questions marked `placeholder: true` are intentionally unfinished. The stop shows the draft question and a "Continuă la oprirea următoare" button, which finishes the stop and routes to the next one like a completed quiz.
 - `sidequests` contains the independent side-quest location IDs and categories. Side quests appear separately and unlock when the player's GPS position enters the interaction radius. Completing one does not advance the main route.
-- Each place needs a unique `id`, a display name, and decimal-degree `lat` / `lon` coordinates.
+- Each place needs a unique `id`, a display name, and decimal-degree `lat` / `lon` coordinates. The loader validates unique place/route IDs, geographic coordinate ranges, route and side-quest references, and trivia answer indexes before the trail starts. Questions explicitly marked `placeholder: true` remain allowed while content is being completed.
 
 **Coordinate note:** some newly added locations currently have provisional coordinates or addresses and should be checked on-site before the game is published. The catalogue includes a `coordinate_note` field to flag this.
 
