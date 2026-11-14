@@ -11,10 +11,10 @@ import { haversine, cardinal } from './geo.js';
 export async function fetchRoute(from, to) {
   const c = `${from.lon},${from.lat};${to.lon},${to.lat}`;
   for (const r of ROUTERS) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), ROUTE_TIMEOUT_MS);
     try {
-      const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ROUTE_TIMEOUT_MS);
       const res = await fetch(r.url.replace('{c}', c) + ROUTE_QUERY, { signal: ctl.signal });
-      clearTimeout(timer);
       if (!res.ok) continue;
       const j = await res.json();
       const route = j.code === 'Ok' && j.routes && j.routes[0];
@@ -33,6 +33,7 @@ export async function fetchRoute(from, to) {
         speed: route.duration > 0 ? route.distance / route.duration : 1.3,
       };
     } catch { /* try the next server */ }
+    finally { clearTimeout(timer); }
   }
   return null;
 }
