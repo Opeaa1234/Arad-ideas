@@ -736,11 +736,15 @@
       "text": [],
       "trivia": [
         {
-          "q": "Întrebare provizorie despre Casa Pianului — completează aici întrebarea finală.",
-          "o": [],
-          "a": -1,
-          "e": "Întrebarea și variantele de răspuns trebuie completate de echipa proiectului.",
-          "placeholder": true
+          "q": "În ce an a contribuit Jacques Faix la înființarea primului fotoclub din Arad?",
+          "o": [
+            "1905",
+            "1906",
+            "1907",
+            "1910"
+          ],
+          "a": 1,
+          "e": "Jacques Faix a contribuit decisiv la organizarea primului club fotografic din Arad în 1906."
         }
       ],
       "routeId": "",
