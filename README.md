@@ -177,3 +177,8 @@ Scores: when a trivia round ends with a new best score, it is sent with `save_pl
 Until this is done the button shows "Conectarea cu Google nu este activată încă pe server." and email accounts keep working.
 
 Supabase settings to check (Dashboard → Authentication → URL Configuration): set **Site URL** to where the app is hosted, and add the same address (and `https://localhost:8443/` for testing) to **Redirect URLs**, otherwise confirmation and reset links won't return to the app.
+
+
+### Research reference: Casa Pianului
+
+The Casa Pianului trivia records the founding year of Arad's first photography club, with Jacques Faix's role documented by the [Alexandru D. Xenopol Arad County Library](https://bibliotecaarad.ro/jacques-faix-1870-1950/) and [Foto Club Arad's history](https://fotoclubarad.ro/istoric/). The location remains unassigned to a route or side quest until the project owner decides where it belongs.

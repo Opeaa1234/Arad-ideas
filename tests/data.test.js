@@ -31,7 +31,9 @@ test('loads the complete Arad catalogue and preserves intentional placeholders',
   assert.equal(result.routes.length, 3);
   assert.equal(result.sidequests.length, 10);
   const pianoHouse = result.places.find(place => place.id === 'casa-pianului');
-  assert.equal(pianoHouse.trivia[0].placeholder, true);
+  assert.match(pianoHouse.trivia[0].q, /primului fotoclub din Arad/i);
+  assert.equal(pianoHouse.trivia[0].o[pianoHouse.trivia[0].a], '1906');
+  assert.equal(pianoHouse.trivia[0].placeholder, undefined);
 });
 
 test('rejects duplicate location ids', async t => {
