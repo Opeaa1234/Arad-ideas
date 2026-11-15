@@ -908,7 +908,8 @@ function afterCompletion(p) {
 // the player's first attempt here; a perfect first attempt is a first blood.
 function recordAttempt(p, q, n) {
   S.store.recordResult(p.id, q.score, n).then(res => {
-    if (!res || !res.first_attempt || !res.first_blood) return;
+    if (!res) { toast('Rezultatul nu a putut fi salvat în cont. Verifică conexiunea.'); return; }
+    if (!res.first_attempt || !res.first_blood) return;
     q.firstBlood = true;
     toast('First blood la ' + p.name + '! Puncte duble.');
     if (S.sheetId === p.id && S.quizzes[p.id] === q) renderQuiz();
@@ -937,7 +938,6 @@ function quizAct(act, el) {
       const best = S.store.getBest(p.id);
       if (best === undefined || q.score > best) {
         S.store.setBest(p.id, q.score);
-        S.store.saveRemoteScore(p.id, q.score).then(ok => { if (!ok) toast('Scorul nu a putut fi salvat în cont. Verifică conexiunea.'); });
       }
       if (!isDone(p.id)) {
         q.unlocked = true;
