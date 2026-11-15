@@ -1,7 +1,7 @@
 // Per-user saved state.
 //   On this device (localStorage): trail progress, best scores cache, own photos.
-//   In Supabase (database/scores.js): best trivia score per place, tied to the account,
-//   so a player who signs in on a new device keeps the stops they finished.
+//   In Supabase (database/leaderboard.js): one authoritative place_results row
+//   per account/place, used for both leaderboard scoring and cross-device sync.
 
 import { STORAGE_PREFIX } from './config.js';
 import { backend } from './backend.js';
@@ -43,16 +43,13 @@ export function createUserStore(userId) {
         const rows = await (await backend()).getMyScores();
         const best = {};
         (rows || []).forEach(r => {
-          const id = r.place_id != null ? String(r.place_id) : null, sc = Number(r.score);
+          const id = r.place_id != null ? String(r.place_id) : null, sc = Number(r.best_score);
           if (id && !isNaN(sc)) best[id] = Math.max(best[id] ?? -1, sc);
         });
         return best;
       } catch (e) { console.warn('[scores] load failed', e); return null; }
     },
-    async saveRemoteScore(placeId, score) {
-      try { await (await backend()).savePlaceScore(placeId, score); return true; }
-      catch (e) { console.warn('[scores] save failed', e); return false; }
-    },
+
 
     // Every finished quiz goes to the leaderboard table. Returns
     // { first_attempt, first_blood, best_score } or null if it failed.
