@@ -42,7 +42,7 @@ QUIET = (ConnectionResetError, BrokenPipeError, ConnectionAbortedError, TimeoutE
 
 def is_private_path(request_path):
     """Return True for hidden paths, including encoded and normalized variants."""
-    path = unquote(urlsplit(request_path).path).replace('\\\\', '/')
+    path = unquote(urlsplit(request_path).path).replace(chr(92), '/')
     normalized = posixpath.normpath('/' + path.lstrip('/'))
     return any(part.startswith('.') for part in normalized.split('/') if part)
 
