@@ -67,6 +67,8 @@ let screen = 'loading', prevScreen = 'dashboard';
 const SCREENS = ['loading', 'welcome', 'dashboard', 'leaderboard', 'routeSelect', 'app', 'minigame', 'fatal'];
 const SIGNED_IN_SCREENS = ['dashboard', 'leaderboard', 'routeSelect', 'app', 'minigame'];
 function showScreen(name) {
+  // Location updates are only needed while the walking map is visible.
+  if (screen === 'app' && name !== 'app') stopGPS();
   if (screen === 'minigame' && name !== 'minigame') unmountMinigame();
   if (name !== screen && SIGNED_IN_SCREENS.includes(screen) && screen !== 'leaderboard') prevScreen = screen;
   screen = name;
@@ -272,8 +274,14 @@ async function refreshDashboardStats() {
 }
 
 // "Explorează orașul": back to the map if a route is running, else the saved route, else the picker.
+function showMapScreen() {
+  showScreen('app');
+  if (map) map.refresh();
+  if (S.watchId === null) startGPS();
+}
+
 function openMap() {
-  if (S.selectedRouteId && map) { showScreen('app'); map.refresh(); return; }
+  if (S.selectedRouteId && map) { showMapScreen(); return; }
   const route = savedRoute();
   if (route) startSelectedRoute(route.id);
   else { renderRouteChoices(); showScreen('routeSelect'); }
@@ -1017,7 +1025,7 @@ function bindEvents() {
       case 'lbsort': sortLeaderboard(el.dataset.sort); break;
       case 'lbrefresh': showLeaderboard(); break;
       case 'back':
-        if (prevScreen === 'app' && map) { showScreen('app'); map.refresh(); }
+        if (prevScreen === 'app' && map) { showMapScreen(); }
         else if (prevScreen === 'dashboard' || !SIGNED_IN_SCREENS.includes(prevScreen)) showDashboard();
         else showScreen(prevScreen);
         break;
@@ -1025,7 +1033,7 @@ function bindEvents() {
         closeSheet(); showScreen('minigame');
         mountMinigame($('#minigameRoot'));
         break;
-      case 'backtomap': showScreen('app'); map && map.refresh(); break;
+      case 'backtomap': showMapScreen(); break;
       case 'authmode': setAuthMode(el.dataset.mode); break;
       case 'google': googleAuth(); break;
       case 'peek': {
