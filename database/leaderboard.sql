@@ -10,7 +10,7 @@
 --     question right. That place then counts double.
 --
 -- Security
---   * Players can read only their own rows in place_results.
+--   * Players can read only their own rows in place_results (RLS + read RPC).
 --   * Writes go only through record_place_result(), which uses the
 --     signed-in user's id (auth.uid()), so nobody can write for someone else.
 --   * get_leaderboard() returns display names and totals only: no e-mails,
@@ -31,12 +31,33 @@ create table if not exists public.place_results (
 );
 
 alter table public.place_results enable row level security;
+-- The browser calls the read RPC below; authenticated users may only read
+-- their own rows directly as well, with RLS enforcing ownership.
+grant select on public.place_results to authenticated;
 
 drop policy if exists "place_results: read own" on public.place_results;
 create policy "place_results: read own"
   on public.place_results for select
   using (auth.uid() = user_id);
 -- No insert/update/delete policies on purpose: see record_place_result().
+
+
+-- Read the signed-in player's saved results for cross-device progress sync.
+-- SECURITY INVOKER keeps the table's row-level security in force.
+create or replace function public.get_my_place_results()
+returns table (place_id text, best_score int)
+language sql
+stable
+security invoker
+set search_path = public
+as $
+  select r.place_id, r.best_score
+  from public.place_results r
+  where r.user_id = auth.uid();
+$;
+
+revoke all on function public.get_my_place_results() from public;
+grant execute on function public.get_my_place_results() to authenticated;
 
 
 -- Called by the app after every finished quiz at a place.
