@@ -5,11 +5,12 @@ import { readFile } from 'node:fs/promises';
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('cross-device scores and leaderboard share place_results', async () => {
-  const [sql, scores, store, app] = await Promise.all([
+  const [sql, scores, store, app, readme] = await Promise.all([
     read('../database/leaderboard.sql'),
     read('../database/scores.js'),
     read('../js/store.js'),
-    read('../js/app.js')
+    read('../js/app.js'),
+    read('../README.md')
   ]);
 
   assert.match(sql, /create table if not exists public\.place_results/i);
@@ -25,6 +26,8 @@ test('cross-device scores and leaderboard share place_results', async () => {
   assert.match(store, /recordPlaceResult\(placeId, score, maxScore\)/);
   assert.doesNotMatch(store, /saveRemoteScore/);
   assert.doesNotMatch(app, /saveRemoteScore/);
+  assert.match(app, /Progresul local și scorurile memorate pe acest dispozitiv[\s\S]*?Rezultatele din clasamentul online nu vor fi șterse/);
+  assert.doesNotMatch(readme, /save_place_score|in `place_scores`/);
 });
 
 test('score RPC allowlist matches every real trail location and question count', async () => {

@@ -965,7 +965,7 @@ function updateAll() {
 }
 
 function resetProgress() {
-  if (!window.confirm('Sigur vrei să iei traseul de la capăt? Progresul și scorurile pentru „' + S.user.name + '” vor fi șterse.')) return;
+  if (!window.confirm('Sigur vrei să iei traseul de la capăt? Progresul local și scorurile memorate pe acest dispozitiv pentru „' + S.user.name + '” vor fi șterse. Rezultatele din clasamentul online nu vor fi șterse.')) return;
   S.prog = { discovered: [], completed: [] }; saveProg();
   S.store.clearBests([...S.path, ...S.sidequestIds]);
   S.quizzes = {}; S.revisitId = null;
