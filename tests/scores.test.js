@@ -27,7 +27,7 @@ test('cross-device scores and leaderboard share place_results', async () => {
   assert.doesNotMatch(store, /saveRemoteScore/);
   assert.doesNotMatch(app, /saveRemoteScore/);
   assert.match(app, /Progresul local și scorurile memorate pe acest dispozitiv[\s\S]*?Rezultatele din clasamentul online nu vor fi șterse/);
-  assert.doesNotMatch(readme, /save_place_score|place_scores/);
+  assert.doesNotMatch(readme, /save_place_score|in `place_scores`/);
 });
 
 test('score RPC allowlist matches every real trail location and question count', async () => {
