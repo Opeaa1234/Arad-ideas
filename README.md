@@ -33,18 +33,18 @@ Opening `index.html` straight from disk won't work, because the browser blocks r
 ```
 index.html              page structure only (front page + app)
 css/styles.css          all styling, theme colours at the top
-js/config.js            settings: radius, map tiles, routing servers, data paths
+js/config.js            settings: radius, map tiles, routing servers, storage prefix
 js/app.js               main controller: screens, trail logic, sheet, trivia (Romanian UI text lives here and in index.html)
 js/auth.js              account layer (Supabase email + password)
 js/store.js             per-user progress and photos (browser) + scores (Supabase)
-js/data.js              loads and validates the CSV database
-js/csv.js               CSV parser
+js/data.js              loads and validates the current JSON trail catalogue
+js/csv.js               legacy CSV parsing helpers; not used by the current trail loader
 js/map.js               Leaflet map wrapper (pins, route line, user dot)
 js/routing.js           walking directions (OSRM)
 js/minigame.js          loads the game (js/game/) the first time "Joc interactiv" is opened
 js/game/                Aradul Pixelat, the pixel-art side-scroller (see below)
 css/game.css            the game's frame and panel styles
-js/photos.js            photo lookup (own photo → CSV photo → Wikipedia placeholder)
+js/photos.js            photo lookup (own photo → JSON catalogue photo → Wikipedia placeholder)
 js/geo.js               distance and formatting helpers
 data/game-data.json     three selectable routes, 31 locations, trivia and 10 side quests
 assets/photos/          drop real photos here
