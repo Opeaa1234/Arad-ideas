@@ -24,6 +24,7 @@ class PrivatePathTests(unittest.TestCase):
             "/%2ecerts/key.pem",
             "/folder/../.certs/key.pem",
             "/folder/%2e%2e/%2egit/config",
+            r"/folder\\..\\.certs\\key.pem",
         ):
             with self.subTest(path=path):
                 self.assertTrue(is_private_path(path))
