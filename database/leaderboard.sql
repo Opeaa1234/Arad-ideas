@@ -76,9 +76,48 @@ begin
   if uid is null then
     raise exception 'not signed in';
   end if;
+  -- The browser must not be able to invent place IDs or claim an arbitrary
+  -- question count. Keep this allowlist in sync with data/game-data.json.
   if p_place_id is null or length(p_place_id) > 80
-     or p_max is null or p_max < 1 or p_max > 20
-     or p_score is null or p_score < 0 or p_score > p_max then
+     or p_max is null or p_score is null or p_score < 0 or p_score > p_max
+     or not exists (
+       select 1
+       from (values
+    ('biserica-rosie', 3),
+    ('primaria-arad', 3),
+    ('filarmonica-arad', 3),
+    ('complex-muzeal', 3),
+    ('vechiul-cazinou', 3),
+    ('moise-nicoara', 3),
+    ('strand-neptun', 3),
+    ('piata-avram-iancu', 3),
+    ('muzeul-calculatoarelor', 3),
+    ('teatrul-ioan-slavici', 3),
+    ('biserica-anton', 3),
+    ('biblioteca-judeteana', 3),
+    ('teatrul-marionete', 3),
+    ('casa-pianului', 1),
+    ('piata-reconcilierii', 3),
+    ('catedrala-sfanta-treime', 3),
+    ('lacul-padurice', 3),
+    ('gara-cfr', 3),
+    ('atrium-mall', 3),
+    ('afi-arad', 3),
+    ('stadion-uta', 3),
+    ('climb-again', 1),
+    ('parcul-zona-300', 1),
+    ('agora-mall', 1),
+    ('stadion-gloria', 1),
+    ('bt-arad', 1),
+    ('uav-corp-m', 1),
+    ('langoseria-felix', 1),
+    ('pravalia-danei', 1),
+    ('piata-mihai-viteazu', 1),
+    ('ar-ski-shop', 1)
+       ) as allowed(place_id, question_count)
+       where allowed.place_id = p_place_id
+         and allowed.question_count = p_max
+     ) then
     raise exception 'invalid result';
   end if;
 
