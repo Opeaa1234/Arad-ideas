@@ -20,6 +20,7 @@ import argparse
 import errno
 import http.server
 import os
+import posixpath
 import re
 import shutil
 import socket
@@ -27,6 +28,7 @@ import ssl
 import subprocess
 import sys
 import time
+from urllib.parse import unquote, urlsplit
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 CERT_DIR = os.path.join(ROOT, '.certs')
@@ -36,6 +38,13 @@ KEY = os.path.join(CERT_DIR, 'key.pem')
 # Errors that happen in normal use (browser closed a tab, cancelled a download,
 # hasn't accepted the certificate yet...). They get one short line, no traceback.
 QUIET = (ConnectionResetError, BrokenPipeError, ConnectionAbortedError, TimeoutError, socket.timeout, ssl.SSLError)
+
+
+def is_private_path(request_path):
+    """Return True for hidden paths, including encoded and normalized variants."""
+    path = unquote(urlsplit(request_path).path).replace('\\\\', '/')
+    normalized = posixpath.normpath('/' + path.lstrip('/'))
+    return any(part.startswith('.') for part in normalized.split('/') if part)
 
 
 def lan_ip():
@@ -72,6 +81,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ROOT, **kwargs)
+
+    def send_head(self):
+        # SimpleHTTPRequestHandler otherwise serves dotfiles when their URL is
+        # requested directly, even though directory listings hide them. In
+        # particular, .certs/key.pem contains the server's private TLS key.
+        if is_private_path(self.path):
+            self.send_error(404, "Not found")
+            return None
+        return super().send_head()
 
     def end_headers(self):
         self.send_header('Cache-Control', 'no-cache')   # always fresh files while developing
