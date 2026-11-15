@@ -17,3 +17,5 @@ jobs:
       - run: npm test
       - name: Check Python server syntax
         run: python -m py_compile serve.py
+      - name: Test local server path protection
+        run: python -m unittest discover -s tests -p 'test_*.py'
