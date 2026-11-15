@@ -151,7 +151,7 @@ Sign-in uses Supabase email + password accounts (project `scplcjroxictdslyrfez`)
 database/supabase.js    Supabase client (project URL + publishable key)
 database/auth.js        sign up / in / out, password reset, auth events
 database/profiles.js    the signed-in user's row in `profiles`
-database/scores.js      save_place_score / place_scores, plus record_place_result and get_leaderboard
+database/scores.js      record_place_result, get_my_place_results and get_leaderboard
 database/leaderboard.sql  one-time SQL for the leaderboard (run in Supabase)
 js/backend.js           loads database/ lazily so the app still opens if Supabase is unreachable
 js/auth.js              account layer for the UI: validation + Romanian error messages
@@ -165,7 +165,7 @@ What the front page does:
 - **Ai uitat parola?**: sends a reset email; the link opens the app in "Alege o parolă nouă" mode.
 - If "Confirm email" is on in Supabase, sign-up shows a message to confirm the address first.
 
-Scores: when a trivia round ends with a new best score, it is sent with `save_place_score(p_place_id, p_score)`, where `p_place_id` is the location id from the CSV (e.g. `college`, text). On a device with no saved progress for that account, places with a score in `place_scores` count as finished, so the player continues where they left off. Trail progress itself (discovered / finished on this device) and own photos stay in the browser.
+Scores: each finished GPS-trail quiz is recorded through `record_place_result()` in the `place_results` table. The player's best score and first-attempt result are calculated there and are used by the leaderboard and cross-device score sync. Discovered / completed trail progress and own photos remain local to the browser. **Resetting the trail** clears local progress and cached scores on that device; it does not delete the account's online leaderboard results.
 
 **Google sign-in setup (one time):**
 
