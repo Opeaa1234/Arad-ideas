@@ -5,11 +5,12 @@ import { readFile } from 'node:fs/promises';
 const read = path => readFile(new URL(path, import.meta.url), 'utf8');
 
 test('cross-device scores and leaderboard share place_results', async () => {
-  const [sql, scores, store, app] = await Promise.all([
+  const [sql, scores, store, app, readme] = await Promise.all([
     read('../database/leaderboard.sql'),
     read('../database/scores.js'),
     read('../js/store.js'),
-    read('../js/app.js')
+    read('../js/app.js'),
+    read('../README.md')
   ]);
 
   assert.match(sql, /create table if not exists public\.place_results/i);
