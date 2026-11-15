@@ -50,11 +50,11 @@ language sql
 stable
 security invoker
 set search_path = public
-as $
+as $fn$
   select r.place_id, r.best_score
   from public.place_results r
   where r.user_id = auth.uid();
-$;
+$fn$;
 
 revoke all on function public.get_my_place_results() from public;
 grant execute on function public.get_my_place_results() to authenticated;
