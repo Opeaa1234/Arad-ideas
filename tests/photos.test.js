@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fileToDataUrl } from '../js/photos.js';
+import { fileToDataUrl, findPhoto, safePhotoUrl, safeAttributionUrl } from '../js/photos.js';
 
 function installImageMocks(t, { width = 1600, height = 1200, context = true } = {}) {
   const saved = {
@@ -68,4 +68,26 @@ test('rejects images with excessive decoded dimensions', async t => {
 test('handles unavailable canvas contexts without throwing synchronously', async t => {
   installImageMocks(t, { context: false });
   await assert.rejects(fileToDataUrl(imageFile()), /canvas unavailable/);
+});
+
+test('accepts HTTPS and same-origin photo URLs but rejects executable or insecure external URLs', () => {
+  assert.equal(safePhotoUrl('https://images.example/photo.jpg'), 'https://images.example/photo.jpg');
+  assert.equal(safePhotoUrl('assets/photos/arad.jpg'), 'https://arad-explorer.invalid/assets/photos/arad.jpg');
+  assert.equal(safePhotoUrl('javascript:alert(1)'), null);
+  assert.equal(safePhotoUrl('data:text/html,<script>alert(1)</script>'), null);
+  assert.equal(safePhotoUrl('http://images.example/photo.jpg'), null);
+  assert.equal(safePhotoUrl('//images.example/photo.jpg'), null);
+  assert.equal(safePhotoUrl(''), null);
+});
+
+test('attribution links must be HTTPS and cannot contain credentials', () => {
+  assert.equal(safeAttributionUrl('https://commons.wikimedia.org/wiki/File:Arad.jpg'), 'https://commons.wikimedia.org/wiki/File:Arad.jpg');
+  assert.equal(safeAttributionUrl('javascript:alert(1)'), null);
+  assert.equal(safeAttributionUrl('http://example.com/photo'), null);
+  assert.equal(safeAttributionUrl('https://user:pass@example.com/'), null);
+});
+
+test('findPhoto safely handles missing optional photo metadata', async () => {
+  assert.equal(await findPhoto({}, null), null);
+  assert.equal(await findPhoto({ photo: '' }, null), null);
 });

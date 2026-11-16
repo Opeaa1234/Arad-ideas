@@ -11,6 +11,29 @@ import { WIKI_SUMMARY, WIKI_IMAGE_WIDTH } from './config.js';
 
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
 const commonsCache = new Map();
+
+// Only load HTTPS images or same-origin relative assets. User uploads are
+// handled separately as data:image URLs and never pass through this helper.
+export function safePhotoUrl(value) {
+  if (typeof value !== 'string' || !value.trim() || value.trim().startsWith('//')) return null;
+  try {
+    const base = typeof location !== 'undefined' && location.href
+      ? location.href : 'https://arad-explorer.invalid/';
+    const url = new URL(value, base);
+    const origin = new URL(base).origin;
+    if (url.username || url.password) return null;
+    return url.protocol === 'https:' || url.origin === origin ? url.href : null;
+  } catch { return null; }
+}
+
+// Attribution links must be HTTPS; unlike image paths, they are always external.
+export function safeAttributionUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password ? url.href : null;
+  } catch { return null; }
+}
 const plain = html => { const d = document.createElement('div'); d.innerHTML = html || ''; return d.textContent.replace(/\s+/g, ' ').trim(); };
 
 // Looks up a Commons file: a sized image URL plus author and licence for the credit.
@@ -30,10 +53,12 @@ async function commonsPhoto(fileName, credit) {
       const meta = info.extmetadata || {};
       const author = plain(meta.Artist && meta.Artist.value);
       const licence = plain(meta.LicenseShortName && meta.LicenseShortName.value);
+      const src = safePhotoUrl(info.thumburl || info.url);
+      if (!src) return null;
       return {
-        src: info.thumburl || info.url,
+        src,
         credit: credit || ['Foto: ' + (author || 'autor necunoscut'), licence, 'Wikimedia Commons'].filter(Boolean).join(' · '),
-        link: info.descriptionurl,
+        link: safeAttributionUrl(info.descriptionurl),
       };
     } catch { return null; }
   })();
@@ -53,14 +78,17 @@ async function wikiPhotos(spec) {
       const res = await fetch(WIKI_SUMMARY(lang, title));
       if (!res.ok) return [];
       const j = await res.json();
-      const page = (j.content_urls && j.content_urls.desktop && j.content_urls.desktop.page) || `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title)}`;
+      const page = safeAttributionUrl((j.content_urls && j.content_urls.desktop && j.content_urls.desktop.page) || `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title)}`);
       const credit = { credit: 'Fotografie provizorie de pe Wikipedia', link: page };
       const out = [];
       if (j.thumbnail && j.thumbnail.source) {
-        out.push({ src: j.thumbnail.source.replace(/\/\d+px-/, `/${WIKI_IMAGE_WIDTH}px-`), ...credit });
-        out.push({ src: j.thumbnail.source, ...credit });
+        const sized = safePhotoUrl(j.thumbnail.source.replace(/\/\d+px-/, `/${WIKI_IMAGE_WIDTH}px-`));
+        const original = safePhotoUrl(j.thumbnail.source);
+        if (sized) out.push({ src: sized, ...credit });
+        if (original && original !== sized) out.push({ src: original, ...credit });
       }
-      if (j.originalimage && j.originalimage.source) out.push({ src: j.originalimage.source, ...credit });
+      const original = j.originalimage && safePhotoUrl(j.originalimage.source);
+      if (original && !out.some(item => item.src === original)) out.push({ src: original, ...credit });
       return out;
     } catch { return []; }
   })();
@@ -69,6 +97,8 @@ async function wikiPhotos(spec) {
 }
 
 function loads(src) {
+  src = safePhotoUrl(src);
+  if (!src) return Promise.resolve(false);
   return new Promise(resolve => {
     const img = new Image();
     img.onload = () => resolve(img.naturalWidth > 1);
@@ -80,12 +110,14 @@ function loads(src) {
 // Resolves to { src, credit, link, own } or null.
 export async function findPhoto(place, ownPhoto) {
   if (ownPhoto) return { src: ownPhoto, credit: 'Fotografia ta', own: true };
-  if (place.photo.startsWith('commons:')) {
-    const c = await commonsPhoto(place.photo.slice(8).trim(), place.photoCredit);
+  const photo = typeof place.photo === 'string' ? place.photo : '';
+  if (photo.startsWith('commons:')) {
+    const c = await commonsPhoto(photo.slice(8).trim(), place.photoCredit);
     if (c && await loads(c.src)) return c;
-  } else if (place.photo) {
-    const c = { src: place.photo, credit: place.photoCredit || 'Fotografie' };
-    if (await loads(c.src)) return c;
+  } else if (photo) {
+    const src = safePhotoUrl(photo);
+    const c = src && { src, credit: place.photoCredit || 'Fotografie' };
+    if (c && await loads(c.src)) return c;
   }
   if (place.wikipedia) {
     for (const c of await wikiPhotos(place.wikipedia)) if (await loads(c.src)) return c;
