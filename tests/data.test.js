@@ -74,3 +74,12 @@ test('rejects unknown side quests', async t => {
   data.sidequests[0].id = 'missing';
   await assert.rejects(withData(t, data), /Unknown side quest location/);
 });
+
+
+test('rejects non-text photo metadata before rendering a place', async t => {
+  for (const field of ['photo', 'photoCredit', 'wikipedia']) {
+    const data = fixture();
+    data.places[0][field] = { unexpected: true };
+    await assert.rejects(withData(t, data), new RegExp('invalid "' + field + '" field'));
+  }
+});

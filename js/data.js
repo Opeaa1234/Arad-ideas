@@ -40,6 +40,11 @@ export async function loadTrail() {
         p.lon === null || p.lon === '' || !Number.isFinite(lon) || lon < -180 || lon > 180) {
       throw new Error('Location "' + p.id + '" needs valid latitude and longitude coordinates.');
     }
+    for (const field of ['photo', 'photoCredit', 'wikipedia']) {
+      if (p[field] != null && typeof p[field] !== 'string') {
+        throw new Error('Location "' + p.id + '" has an invalid "' + field + '" field.');
+      }
+    }
     validateTrivia(p);
     return {
       ...p, lat, lon, short: p.short || p.name, category: p.category || '',
