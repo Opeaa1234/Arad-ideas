@@ -96,20 +96,54 @@ export async function findPhoto(place, ownPhoto) {
 export const searchPhotosUrl = place =>
   'https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(place.name + ' Arad');
 
+// Bound both the compressed upload and decoded dimensions: a small compressed
+// image can still expand into a very large bitmap and exhaust browser memory.
+const MAX_PHOTO_BYTES = 12 * 1024 * 1024;
+const MAX_PHOTO_PIXELS = 40_000_000;
+const MAX_PHOTO_SIDE = 12_000;
+
 // Shrinks a picked image file to a JPEG data URL so it fits in browser storage.
 export function fileToDataUrl(file, maxSide = 900) {
   return new Promise((resolve, reject) => {
+    if (!file || typeof file.type !== 'string' || !file.type.startsWith('image/')) {
+      reject(new Error('unsupported image type'));
+      return;
+    }
+    if (!Number.isFinite(file.size) || file.size <= 0 || file.size > MAX_PHOTO_BYTES) {
+      reject(new Error('image file is empty or too large'));
+      return;
+    }
+    if (!Number.isFinite(maxSide) || maxSide <= 0) {
+      reject(new Error('invalid output size'));
+      return;
+    }
+
     const fr = new FileReader();
     fr.onerror = () => reject(new Error('read failed'));
     fr.onload = () => {
       const img = new Image();
       img.onerror = () => reject(new Error('not an image'));
       img.onload = () => {
-        const k = Math.min(1, maxSide / Math.max(img.width, img.height));
-        const c = document.createElement('canvas');
-        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        resolve(c.toDataURL('image/jpeg', 0.82));
+        const width = img.naturalWidth || img.width;
+        const height = img.naturalHeight || img.height;
+        if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0
+          || width > MAX_PHOTO_SIDE || height > MAX_PHOTO_SIDE
+          || width * height > MAX_PHOTO_PIXELS) {
+          reject(new Error('image dimensions are too large'));
+          return;
+        }
+        try {
+          const k = Math.min(1, maxSide / Math.max(width, height));
+          const c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(width * k));
+          c.height = Math.max(1, Math.round(height * k));
+          const context = c.getContext('2d');
+          if (!context) throw new Error('canvas unavailable');
+          context.drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', 0.82));
+        } catch (err) {
+          reject(err);
+        }
       };
       img.src = fr.result;
     };
