@@ -15,7 +15,7 @@ const commonsCache = new Map();
 // Only load HTTPS images or same-origin relative assets. User uploads are
 // handled separately as data:image URLs and never pass through this helper.
 export function safePhotoUrl(value) {
-  if (typeof value !== 'string' || !value.trim()) return null;
+  if (typeof value !== 'string' || !value.trim() || /^\\s*\\/\\//.test(value)) return null;
   try {
     const base = typeof location !== 'undefined' && location.href
       ? location.href : 'https://arad-explorer.invalid/';
@@ -110,11 +110,12 @@ function loads(src) {
 // Resolves to { src, credit, link, own } or null.
 export async function findPhoto(place, ownPhoto) {
   if (ownPhoto) return { src: ownPhoto, credit: 'Fotografia ta', own: true };
-  if (place.photo.startsWith('commons:')) {
-    const c = await commonsPhoto(place.photo.slice(8).trim(), place.photoCredit);
+  const photo = typeof place.photo === 'string' ? place.photo : '';
+  if (photo.startsWith('commons:')) {
+    const c = await commonsPhoto(photo.slice(8).trim(), place.photoCredit);
     if (c && await loads(c.src)) return c;
-  } else if (place.photo) {
-    const src = safePhotoUrl(place.photo);
+  } else if (photo) {
+    const src = safePhotoUrl(photo);
     const c = src && { src, credit: place.photoCredit || 'Fotografie' };
     if (c && await loads(c.src)) return c;
   }

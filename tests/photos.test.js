@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fileToDataUrl, safePhotoUrl, safeAttributionUrl } from '../js/photos.js';
+import { fileToDataUrl, findPhoto, safePhotoUrl, safeAttributionUrl } from '../js/photos.js';
 
 function installImageMocks(t, { width = 1600, height = 1200, context = true } = {}) {
   const saved = {
@@ -85,4 +85,9 @@ test('attribution links must be HTTPS and cannot contain credentials', () => {
   assert.equal(safeAttributionUrl('javascript:alert(1)'), null);
   assert.equal(safeAttributionUrl('http://example.com/photo'), null);
   assert.equal(safeAttributionUrl('https://user:pass@example.com/'), null);
+});
+
+test('findPhoto safely handles missing optional photo metadata', async () => {
+  assert.equal(await findPhoto({}, null), null);
+  assert.equal(await findPhoto({ photo: '' }, null), null);
 });
