@@ -19,3 +19,12 @@ test('returning to the walking map resumes GPS', () => {
   assert.match(appSource, /if \(prevScreen === 'app' && map\) \{ showMapScreen\(\); \}/);
   assert.match(appSource, /case 'backtomap': showMapScreen\(\); break;/);
 });
+
+
+test('pauses GPS in a hidden tab and resumes only for the active walking map', () => {
+  const listener = appSource.match(/document\.addEventListener\('visibilitychange', \(\) => \{([\s\S]*?)\n  \}\);/);
+  assert.ok(listener, 'visibilitychange listener exists');
+  assert.match(listener[1], /if \(document\.hidden\) stopGPS\(\)/);
+  assert.match(listener[1], /screen === 'app' && S\.user && !S\.sim && S\.watchId === null/);
+  assert.match(listener[1], /startGPS\(\)/);
+});
