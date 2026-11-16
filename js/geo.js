@@ -11,7 +11,11 @@ export function haversine(lat1, lon1, lat2, lon2) {
 
 const CARDINALS = ['nord', 'nord-nord-est', 'nord-est', 'est-nord-est', 'est', 'est-sud-est', 'sud-est', 'sud-sud-est',
   'sud', 'sud-sud-vest', 'sud-vest', 'vest-sud-vest', 'vest', 'vest-nord-vest', 'nord-vest', 'nord-nord-vest'];
-export const cardinal = bearing => CARDINALS[Math.round(bearing / 22.5) % 16];
+export const cardinal = bearing => {
+  const value = Number.isFinite(bearing) ? bearing : 0;
+  const index = ((Math.round(value / 22.5) % 16) + 16) % 16;
+  return CARDINALS[index];
+};
 
 export const fmtDist = m => m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(2).replace('.', ',') + ' km';
 export const fmtDur = s => { const m = Math.round(s / 60); return m < 1 ? 'sub 1 min' : m + ' min'; };
