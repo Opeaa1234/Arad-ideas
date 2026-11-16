@@ -15,7 +15,7 @@ const commonsCache = new Map();
 // Only load HTTPS images or same-origin relative assets. User uploads are
 // handled separately as data:image URLs and never pass through this helper.
 export function safePhotoUrl(value) {
-  if (typeof value !== 'string' || !value.trim() || /^\\s*\\/\\//.test(value)) return null;
+  if (typeof value !== 'string' || !value.trim() || value.trim().startsWith('//')) return null;
   try {
     const base = typeof location !== 'undefined' && location.href
       ? location.href : 'https://arad-explorer.invalid/';
