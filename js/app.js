@@ -493,12 +493,14 @@ function onGPSErr(err) {
   updateAll();
 }
 function setSim(on) {
+  if (on) stopGPS();
   S.sim = on; $('#sim').checked = on;
   if (on) {
     if (!S.simPos) S.simPos = { lat: 46.1765, lon: 21.3216 };
     S.pos = { lat: S.simPos.lat, lon: S.simPos.lon, acc: 0 };
   } else S.pos = S.lastGps;
   updateAll();
+  if (!on && screen === 'app' && S.user && !document.hidden && S.watchId === null) startGPS();
 }
 
 /* ===================== TRAIL LOGIC ===================== */

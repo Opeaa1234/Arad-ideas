@@ -28,3 +28,10 @@ test('pauses GPS in a hidden tab and resumes only for the active walking map', (
   assert.match(listener[1], /screen === 'app' && S\.user && !S\.sim && S\.watchId === null/);
   assert.match(listener[1], /startGPS\(\)/);
 });
+
+test('simulation mode stops GPS immediately and resumes it on the visible walking map', () => {
+  const setSim = appSource.match(/function setSim\(on\) \{([\s\S]*?)\n\}/);
+  assert.ok(setSim, 'setSim function exists');
+  assert.match(setSim[1], /if \(on\) stopGPS\(\)/);
+  assert.match(setSim[1], /if \(!on && screen === 'app' && S\.user && !document\.hidden && S\.watchId === null\) startGPS\(\)/);
+});
