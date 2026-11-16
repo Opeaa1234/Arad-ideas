@@ -1079,6 +1079,10 @@ function bindEvents() {
     else if (document.body.classList.contains('panel-open')) setPanel('');
     else closeMenu();
   });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopGPS();
+    else if (screen === 'app' && S.user && !S.sim && S.watchId === null) startGPS();
+  });
   SYSTEM_DARK.addEventListener('change', applyTheme);
   MOBILE_MQ.addEventListener('change', () => { setPanel(''); measureHeader(); map && map.refresh(); });
   window.addEventListener('resize', measureHeader);
