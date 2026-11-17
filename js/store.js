@@ -50,7 +50,6 @@ export function createUserStore(userId) {
       } catch (e) { console.warn('[scores] load failed', e); return null; }
     },
 
-
     // Every finished quiz goes to the leaderboard table. Returns
     // { first_attempt, first_blood, best_score } or null if it failed.
     async recordResult(placeId, score, maxScore) {
