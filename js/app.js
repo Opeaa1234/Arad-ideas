@@ -4,6 +4,7 @@ import { DEFAULT_RADIUS, ARRIVED_METERS } from './config.js';
 import { loadTrail } from './data.js';
 import { auth, validateDisplayName, validateEmail, validatePassword, MIN_PASSWORD, oauthError } from './auth.js';
 import { createUserStore } from './store.js';
+import { mergeRemoteProgress } from './progress-sync.js';
 import { haversine, fmtDist, fmtDur, nearestOnLine, lineLength } from './geo.js';
 import { fetchRoute, stepText, currentStep } from './routing.js';
 import { findPhoto, searchPhotosUrl, fileToDataUrl } from './photos.js';
@@ -355,20 +356,23 @@ function runTour() {
 // so the player continues where they left off. Later, this device's own
 // trail state wins (so "Ia traseul de la capăt" works), but best scores still merge.
 async function syncFromAccount(user) {
-  const store = S.store, fresh = !store.hasLocalProgress();
+  const store = S.store;
   const remote = await store.loadRemoteScores();
   if (!remote || S.user !== user) return;
+
   let changed = false;
   for (const [id, score] of Object.entries(remote)) {
     if (!S.byId.has(id)) continue;
     const local = store.getBest(id);
     if (local === undefined || score > local) store.setBest(id, score);
-    if (fresh && !isDone(id)) { S.prog.discovered.includes(id) || S.prog.discovered.push(id); S.prog.completed.push(id); changed = true; }
   }
-  if (changed) {
+
+  const merged = mergeRemoteProgress(S.prog, remote, new Set(S.byId.keys()));
+  if (merged.changed) {
+    S.prog = merged.progress;
     saveProg(); listSig = ''; clearRoute();
     updateAll(); fitTrail();
-    toast('Ți-am adus progresul salvat în cont.');
+    toast('Ți-am sincronizat progresul salvat în cont.');
   }
 }
 

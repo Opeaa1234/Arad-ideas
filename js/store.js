@@ -1,6 +1,6 @@
 // Per-user saved state.
 //   On this device (localStorage): trail progress, best scores cache, own photos.
-//   In Supabase (database/leaderboard.js): one authoritative place_results row
+//   In Supabase (database/leaderboard.sql): one authoritative place_results row
 //   per account/place, used for both leaderboard scoring and cross-device sync.
 
 import { STORAGE_PREFIX } from './config.js';
