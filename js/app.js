@@ -360,15 +360,19 @@ async function syncFromAccount(user) {
   const remote = await store.loadRemoteScores();
   if (!remote || S.user !== user) return;
 
-  for (const [id, score] of Object.entries(remote)) {
-    if (!S.byId.has(id)) continue;
-    const local = store.getBest(id);
-    if (local === undefined || score > local) store.setBest(id, score);
+  const resetOnThisDevice = store.isProgressReset();
+  // Do not repopulate either the local best-score cache or completed stops
+  // after an intentional reset. The online leaderboard remains unchanged.
+  if (!resetOnThisDevice) {
+    for (const [id, score] of Object.entries(remote)) {
+      if (!S.byId.has(id)) continue;
+      const local = store.getBest(id);
+      if (local === undefined || score > local) store.setBest(id, score);
+    }
   }
 
-  // A deliberate local reset must not be undone by the account's older completions.
   const merged = mergeRemoteProgress(S.prog, remote, new Set(S.byId.keys()), {
-    skipRemote: store.isProgressReset(),
+    skipRemote: resetOnThisDevice,
   });
   if (merged.changed) {
     S.prog = merged.progress;

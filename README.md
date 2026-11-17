@@ -165,7 +165,7 @@ What the front page does:
 - **Ai uitat parola?**: sends a reset email; the link opens the app in "Alege o parolă nouă" mode.
 - If "Confirm email" is on in Supabase, sign-up shows a message to confirm the address first.
 
-Scores: each finished GPS-trail quiz is recorded through `record_place_result()` in the `place_results` table. The player's best score and first-attempt result are calculated there and are used by the leaderboard and cross-device score sync. Discovered / completed trail progress and own photos remain local to the browser. **Resetting the trail** clears local progress and cached scores on that device; it does not delete the account's online leaderboard results.
+Scores: each finished GPS-trail quiz is recorded through `record_place_result()` in the `place_results` table. The player's best score and first-attempt result are calculated there and are used by the leaderboard and cross-device sync. On a new device, completed stops are restored from the account's saved quiz results; stops that were only discovered (not completed), route selection and own photos remain local to each browser. **Resetting the trail** clears local progress and cached scores on that device. That device will not restore older remote completions or cached scores after the reset, while the online leaderboard remains unchanged; another device can still restore the account's previously completed stops.
 
 **Google sign-in setup (one time):**
 
