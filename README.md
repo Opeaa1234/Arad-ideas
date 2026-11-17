@@ -182,3 +182,11 @@ Supabase settings to check (Dashboard → Authentication → URL Configuration):
 ### Research reference: Casa Pianului
 
 The Casa Pianului trivia records the founding year of Arad's first photography club, with Jacques Faix's role documented by the [Alexandru D. Xenopol Arad County Library](https://bibliotecaarad.ro/jacques-faix-1870-1950/) and [Foto Club Arad's history](https://fotoclubarad.ro/istoric/). The location remains unassigned to a route or side quest until the project owner decides where it belongs.
+
+## Deploying Arad Explorer to Vercel
+
+Arad Explorer is a standalone static site. Import **only** the `Opeaa1234/Arad-ideas` repository when creating its Vercel project; do not connect the DLeo repository. Use the repository root as the project root, with no build command and no output-directory override (the app is served directly from the root). The committed `vercel.json` applies baseline browser security headers and prevents the game catalogue JSON from being cached stale.
+
+After the first deployment, set the deployed HTTPS origin as the Supabase Authentication **Site URL** and add it to **Redirect URLs**. Keep the local HTTPS test URL there too if it is still used. Google OAuth's authorised redirect URI remains the Supabase callback URL documented above; it is not the Vercel site URL.
+
+The Vercel project and its deployment are independent of DLeo. Creating or linking the Vercel project and updating Supabase dashboard settings are dashboard actions; the repository configuration alone does not perform them.
