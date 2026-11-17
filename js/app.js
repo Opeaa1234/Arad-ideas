@@ -992,7 +992,7 @@ function resetProgress() {
   if (!window.confirm('Sigur vrei să iei traseul de la capăt? Progresul local și scorurile memorate pe acest dispozitiv pentru „' + S.user.name + '” vor fi șterse. Rezultatele din clasamentul online nu vor fi șterse.')) return;
   S.prog = { discovered: [], completed: [] }; saveProg();
   S.store.markProgressReset();
-  S.store.clearBests([...S.path, ...S.sidequestIds]);
+  S.store.clearBests(S.places.map(p => p.id));
   S.quizzes = {}; S.revisitId = null;
   closeSheet(); clearRoute(); listSig = '';
   if (map) map.clearStops();
