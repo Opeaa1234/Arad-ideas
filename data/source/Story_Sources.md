@@ -13,3 +13,11 @@ Textele scurte din `data/game-data.json` sunt rezumate originale în limba româ
 ## Editorial note
 
 Poveștile descriu patrimoniul și contextul locurilor, nu promit că spațiile interioare sunt deschise publicului. Programul, accesul și facilitățile sezoniere trebuie verificate separat înainte de vizită.
+
+- **Piața Avram Iancu** — Asociația Națională Cultul Eroilor „Regina Maria”, [Monumentul Ostașului Român](https://ancermarad.ro/monumentul-ostasului-roman/). Date folosite: dezvelirea din 1960, autorul Gavril Covalschi și compoziția grupului statuar.
+- **Muzeul de Istorie a Calculatoarelor Arad** — Adevărul, [Muzeul din România unde se află strămoșii tabletelor și calculatoarelor de azi](https://adevarul.ro/stiri-locale/arad/muzeul-din-romania-unde-se-afla-stramosii-2331051.html). Date folosite: colecția privată, inițiatorul Florin Mărcuș, tipurile de exponate și vizitarea pe bază de programare.
+- **Teatrul Clasic „Ioan Slavici”** — Teatrul Clasic Arad, [Istoria Teatrului](https://www.teatrulclasic.ro/istorie). Date folosite: construcția începută în 1872, primele reprezentații din 1874 și incendiul din 1883.
+- **Biserica Romano-Catolică „Sfântul Anton de Padova”** — [Monumente: Biserica romano-catolică, Arad](https://enciclopedie.referinte.transindex.adatbank.ro/monument.php?id=202). Date folosite: proiectul lui Emil Tabakovits, datarea 1902–1904 și sfințirea din 1911.
+- **Biblioteca Județeană „Alexandru D. Xenopol”** — Biblioteca Județeană Arad, [Despre noi](https://bibliotecaarad.ro/despre/) și [Reabilitare energetică](https://bibliotecaarad.ro/reabilitare-energetica-la-biblioteca-judeteana-alexandru-d-xenopol-arad/). Date folosite: biblioteca publică din 1913, sediul actual din 1909 și mutarea din 1984.
+- **Teatrul de Marionete** — CNIPT Arad, [Teatrul de Marionete](https://www.cniptarad.ro/ro/harta-locatie/229-teatrul-de-marionete). Date folosite: înființarea în 1951, inițiatorul Cristian Frangopol și spectacolul inaugural.
+- **Piața Reconcilierii** — CNIPT Arad, [Parcul Reconcilierii](https://www.cniptarad.ro/ro/harta-locatie/68-parcul-reconcilierii). Date folosite: Statuia Libertății, istoria mutărilor, comemorarea celor 13 generali și Arcul de Triumf.
