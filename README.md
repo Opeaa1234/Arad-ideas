@@ -190,3 +190,25 @@ Arad Explorer is a standalone static site. Import **only** the `Opeaa1234/Arad-i
 After the first deployment, set the deployed HTTPS origin as the Supabase Authentication **Site URL** and add it to **Redirect URLs**. Keep the local HTTPS test URL there too if it is still used. Google OAuth's authorised redirect URI remains the Supabase callback URL documented above; it is not the Vercel site URL.
 
 The Vercel project and its deployment are independent of DLeo. Creating or linking the Vercel project and updating Supabase dashboard settings are dashboard actions; the repository configuration alone does not perform them.
+
+
+## First-release verification checklist
+
+The repository checks below are not a substitute for configuring and testing the hosted Supabase project. Complete these checks before calling the app release-ready:
+
+1. In the Arad Explorer Supabase project (`scplcjroxictdslyrfez`), open **SQL Editor** and run `database/leaderboard.sql`. This creates the leaderboard/results table and the three RPC functions used for score recording, personal progress sync and leaderboard display. It is safe to re-run after later SQL updates.
+2. In **Authentication → URL Configuration**, set the real app origin as **Site URL** and add each exact HTTPS app origin used for testing to **Redirect URLs**. The local development URL is `https://localhost:8443/`.
+3. If Google sign-in is wanted, complete the Google Cloud OAuth client setup and enable Google in **Authentication → Sign In / Providers**. The authorised Google redirect URI is `https://scplcjroxictdslyrfez.supabase.co/auth/v1/callback`. Email/password sign-in does not depend on Google being enabled.
+4. Create a test account and verify registration, email confirmation (if enabled), login, password reset, logout and a fresh login. Test Google sign-in separately if enabled.
+5. Finish a GPS-trail quiz, refresh and reopen the app, then sign in on a second browser/device to verify that completed-stop scores sync. Confirm that discovered-only stops, route choice and personal photos remain device-local, as described above.
+6. On a real phone, test location permission allowed and denied, approximate/poor GPS, loss of connectivity and recovery after reconnecting.
+7. Before release, verify all location addresses and coordinates on site or against authoritative sources. In particular, **AR Ski Shop** still has a provisional address, provisional coordinates and no description in the catalogue; do not treat that stop's location/content as verified. **Casa Pianului** has no photo yet; keep the existing no-photo fallback unless a properly licensed and credited image is supplied.
+
+### Account and scoring implementation notes
+
+- The browser uses the Supabase project URL and a publishable key in `database/supabase.js`. A publishable key is intended to be public; never put a Supabase secret or service-role key in browser code. Keep database access protected by the SQL policies and function permissions.
+- The app's profile lookup is best-effort: if a `profiles` row is unavailable, it falls back to the account's `display_name` metadata or email prefix. The checked-in `database/leaderboard.sql` does not create a separate `profiles` table.
+- `record_place_result()` validates the signed-in account, known place IDs, allowed question counts and score range. It receives an aggregate score from the browser; it does **not** independently validate each submitted answer. A determined user could manipulate their client and submit an inflated score, so the current leaderboard is not cheat-proof. Server-side answer validation would be required before treating scores as trusted competition results.
+- The checked-in SQL allowlist currently matches all 31 place IDs and their trivia-question counts in `data/game-data.json`. Keep that list synchronized whenever catalogue IDs or question counts change.
+
+The SQL setup and device checks above are manual release gates. Passing automated repository tests alone does not confirm that the hosted Supabase project, OAuth provider or phone GPS behavior is configured correctly.
