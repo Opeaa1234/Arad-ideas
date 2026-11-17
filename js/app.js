@@ -360,7 +360,6 @@ async function syncFromAccount(user) {
   const remote = await store.loadRemoteScores();
   if (!remote || S.user !== user) return;
 
-  let changed = false;
   for (const [id, score] of Object.entries(remote)) {
     if (!S.byId.has(id)) continue;
     const local = store.getBest(id);
@@ -485,12 +484,16 @@ function stopGPS() {
   S.watchId = null;
 }
 function onGPS(p) {
+  // clearWatch() may not cancel a callback already queued by the browser.
+  if (screen !== 'app' || !S.user) return;
   S.gpsErr = null;
   S.lastGps = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy || 0 };
   if (!S.sim) S.pos = S.lastGps;
   updateAll();
 }
 function onGPSErr(err) {
+  // Ignore late errors after leaving the map (or while using simulated GPS).
+  if (screen !== 'app' || !S.user || S.sim) return;
   S.gpsErr = err.code === 1
     ? 'Accesul la locație este blocat. Permite-l din setările browserului pentru această pagină, apoi apasă „Activează”.'
     : err.code === 2 ? 'Locația nu este disponibilă momentan. Încercăm din nou…' : 'Semnalul GPS întârzie. Încercăm în continuare…';
