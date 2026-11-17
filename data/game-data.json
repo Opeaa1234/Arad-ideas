@@ -1187,7 +1187,10 @@
       "photo": "assets/photos/climb-again.jpg",
       "photoCredit": "",
       "wikipedia": "",
-      "text": [],
+      "text": [
+        "Climb Again Arad este o sală de escaladă și bouldering amenajată în fosta fabrică TEBA, în spațiul cunoscut anterior comunității ca One Move. Aici pot încerca escalada atât începătorii, cât și cei care practică deja acest sport.",
+        "Centrul face parte dintr-o organizație care folosește escalada pentru terapie, integrare și dezvoltare personală, inclusiv pentru copii și tineri cu dizabilități. Sportul devine astfel și un mod de a construi încredere și comunitate."
+      ],
       "trivia": [
         {
           "q": "Cum îl chema pe fostul proprietar?",
@@ -1217,7 +1220,10 @@
       "photo": "assets/photos/parcul-zona-300.jpg",
       "photoCredit": "",
       "wikipedia": "",
-      "text": [],
+      "text": [
+        "Parcul Zona 300 este un punct de recreere din cartierul Micălaca, în zona Bulevardului Nicolae Titulescu. Documentele Primăriei Arad includ aici un spațiu de joacă pentru copii, alături de alte amenajări de cartier.",
+        "Oprește-te pentru o pauză și observă cum spațiile verzi și locurile de întâlnire de proximitate completează viața de zi cu zi a cartierului."
+      ],
       "trivia": [
         {
           "q": "Câte mese de șah sunt în parc?",
@@ -1247,18 +1253,21 @@
       "photo": "assets/photos/agora-mall.jpg",
       "photoCredit": "",
       "wikipedia": "",
-      "text": [],
+      "text": [
+        "Agora Arad este un centru comercial de pe Calea Aurel Vlaicu, cu magazine, restaurante și spații de divertisment. Complexul include activități pentru familii și vizitatori, precum bowling, jocuri arcade și zone de joacă pentru copii.",
+        "Locul a evoluat ca destinație de cumpărături și timp liber pentru zona de nord a orașului. În prezent, centrul se prezintă publicului sub numele Agora Arad."
+      ],
       "trivia": [
         {
-          "q": "Ce se desfășoară în subsolul mallului?",
+          "q": "Ce activitate de divertisment poți găsi la Agora Arad?",
           "o": [
             "Biliard",
             "Bowling",
             "Karting",
             "Darts"
           ],
-          "a": 2,
-          "e": "Răspunsul corect: Karting."
+          "a": 1,
+          "e": "Bowlingul este menționat printre activitățile de divertisment ale centrului."
         }
       ],
       "routeId": "",
@@ -1277,18 +1286,21 @@
       "photo": "assets/photos/stadion-gloria.jpg",
       "photoCredit": "",
       "wikipedia": "",
-      "text": [],
+      "text": [
+        "Stadionul Gloria este o bază sportivă folosită pentru atletism și activități dedicate tinerilor sportivi arădeni. Pista de alergare a fost redeschisă publicului în iunie 2026, după lucrări de modernizare.",
+        "Atenție la zonele în lucru: în octombrie 2026, organizatorii competițiilor au precizat că arena era deschisă doar parțial, iar sectoarele pentru sărituri, disc și ciocan nu erau funcționale. Respectă indicatoarele și accesul permis."
+      ],
       "trivia": [
         {
-          "q": "Ce sport se poate practica în interiorul traseului de alergat?",
+          "q": "Ce activitate poți practica pe pista de atletism deschisă publicului?",
           "o": [
             "Aruncarea mingii de oină",
             "Lovirea ciocanului",
-            "Aruncarea Ciocanului",
+            "Alergarea",
             "Aruncarea discului"
           ],
           "a": 2,
-          "e": "Răspunsul corect: Aruncarea Ciocanului."
+          "e": "Pista este destinată alergării; în octombrie 2026 sectoarele pentru aruncarea discului și a ciocanului nu erau funcționale."
         }
       ],
       "routeId": "",
@@ -1307,7 +1319,10 @@
       "photo": "assets/photos/bt-arad.jpg",
       "photoCredit": "",
       "wikipedia": "",
-      "text": [],
+      "text": [
+        "Acest punct Banca Transilvania face parte din rețeaua de servicii bancare a orașului. Agenția de pe Bulevardul Revoluției oferă servicii pentru conturi, carduri, credite și operațiuni prin ATM.",
+        "Oprirea marchează și rolul serviciilor financiare în viața cotidiană a centrului Aradului. Verifică adresa și programul direct la bancă înainte de a planifica o operațiune."
+      ],
       "trivia": [
         {
           "q": "Câte ATM-uri sunt la intrare?",
@@ -1337,7 +1352,10 @@
       "photo": "assets/photos/uav-corp-m.jpg",
       "photoCredit": "",
       "wikipedia": "",
-      "text": [],
+      "text": [
+        "Complexul M al Universității „Aurel Vlaicu” se află pe strada Elena Drăgoi și găzduiește mai multe facultăți, între care Inginerie, Științe Exacte, Științe Umaniste și Științele Educației.",
+        "Clădirea este legată și de inițiative tehnologice locale. Hack4Arad, organizat în colaborare cu universitatea și Primăria, aduce împreună programatori, analiști și designeri pentru a crea soluții digitale la provocări ale orașului."
+      ],
       "trivia": [
         {
           "q": "Ce concurs s-a susținut aici și a dus la realizarea acestui proiect?",
@@ -1367,7 +1385,10 @@
       "photo": "assets/photos/langoseria-felix.jpg",
       "photoCredit": "",
       "wikipedia": "",
-      "text": [],
+      "text": [
+        "Langoșeria Felix este un popas culinar din Aradul Nou, pe Calea Timișorii. Locul este cunoscut pentru langoșii preparați pe loc, cu variante clasice și umpluturi diferite.",
+        "Oprirea aduce în traseu gustul unei afaceri locale și amintește că explorarea unui oraș înseamnă și descoperirea micilor locuri frecventate de comunitate."
+      ],
       "trivia": [
         {
           "q": "Cum îl cheamă pe fiul lui Felix?",
@@ -1397,7 +1418,10 @@
       "photo": "assets/photos/pravalia-danei.jpg",
       "photoCredit": "",
       "wikipedia": "",
-      "text": [],
+      "text": [
+        "Prăvălia Danei este o băcănie de cartier din Aradul Nou, pe Calea Timișorii 121, orientată spre produse locale și de la furnizori regionali. Printre produsele prezentate de magazin se regăsesc specialități și preparate aduse de la producători din zona Aradului.",
+        "Este o oprire care pune în valoare comerțul de proximitate și legătura dintre oraș și comunitățile din jur. Oferta se schimbă în funcție de sezon și de aprovizionare."
+      ],
       "trivia": [
         {
           "q": "Cu cine e vecină?",
@@ -1427,7 +1451,10 @@
       "photo": "assets/photos/piata-mihai-viteazu.jpg",
       "photoCredit": "",
       "wikipedia": "",
-      "text": [],
+      "text": [
+        "Piața Mihai Viteazu, cunoscută de arădeni și ca Piața Mică, este una dintre piețele tradiționale în aer liber ale orașului. Aici localnicii găsesc produse aduse de producători și comercianți, de la legume și fructe până la flori, brânzeturi și produse de panificație.",
+        "Piața păstrează un ritm aparte față de centrele comerciale: întâlniri, cumpărături de zi cu zi și produse care reflectă recolta și oferta regiunii."
+      ],
       "trivia": [
         {
           "q": "Care este produsul predominant vândut?",
