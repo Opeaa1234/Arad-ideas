@@ -83,3 +83,24 @@ test('rejects non-text photo metadata before rendering a place', async t => {
     await assert.rejects(withData(t, data), new RegExp('invalid "' + field + '" field'));
   }
 });
+
+test('rejects malformed visitor-facing story text', async t => {
+  for (const text of [{ unexpected: true }, ['A valid paragraph', 42], ['   ']]) {
+    const data = fixture();
+    data.places[0].text = text;
+    await assert.rejects(withData(t, data), /story text as an array of non-empty strings/);
+  }
+});
+
+test('rejects malformed trivia containers instead of silently hiding questions', async t => {
+  const data = fixture();
+  data.places[0].trivia = { q: 'Question?', o: ['A', 'B'], a: 0 };
+  await assert.rejects(withData(t, data), /needs trivia as an array/);
+});
+
+test('accepts missing optional story text and normalizes it to an empty array', async t => {
+  const data = fixture();
+  delete data.places[0].text;
+  const result = await withData(t, data);
+  assert.deepEqual(result.places[0].text, []);
+});

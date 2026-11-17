@@ -3,8 +3,18 @@ function requiredText(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function validateText(place) {
+  if (place.text == null) return;
+  if (!Array.isArray(place.text) || place.text.some(paragraph => !requiredText(paragraph))) {
+    throw new Error('Location "' + place.id + '" needs story text as an array of non-empty strings.');
+  }
+}
+
 function validateTrivia(place) {
-  if (!Array.isArray(place.trivia)) return;
+  if (place.trivia == null) return;
+  if (!Array.isArray(place.trivia)) {
+    throw new Error('Location "' + place.id + '" needs trivia as an array.');
+  }
   place.trivia.forEach((question, index) => {
     if (!question || typeof question !== 'object') {
       throw new Error('Question ' + (index + 1) + ' at "' + place.id + '" must be an object.');
@@ -45,6 +55,7 @@ export async function loadTrail() {
         throw new Error('Location "' + p.id + '" has an invalid "' + field + '" field.');
       }
     }
+    validateText(p);
     validateTrivia(p);
     return {
       ...p, lat, lon, short: p.short || p.name, category: p.category || '',
