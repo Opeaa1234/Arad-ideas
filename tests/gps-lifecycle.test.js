@@ -35,3 +35,17 @@ test('simulation mode stops GPS immediately and resumes it on the visible walkin
   assert.match(setSim[1], /if \(on\) stopGPS\(\)/);
   assert.match(setSim[1], /if \(!on && screen === 'app' && S\.user && !document\.hidden && S\.watchId === null\) startGPS\(\)/);
 });
+
+test('ignores GPS success callbacks queued after leaving the map', () => {
+  const onGPS = appSource.match(/function onGPS\(p\) \{([\s\S]*?)\n\}/);
+  assert.ok(onGPS, 'onGPS callback exists');
+  assert.match(onGPS[1], /screen !== 'app' \|\| !S\.user/);
+  assert.match(onGPS[1], /return/);
+});
+
+test('ignores GPS errors after leaving the map or entering simulation mode', () => {
+  const onGPSErr = appSource.match(/function onGPSErr\(err\) \{([\s\S]*?)\n\}/);
+  assert.ok(onGPSErr, 'onGPSErr callback exists');
+  assert.match(onGPSErr[1], /screen !== 'app' \|\| !S\.user \|\| S\.sim/);
+  assert.match(onGPSErr[1], /return/);
+});
