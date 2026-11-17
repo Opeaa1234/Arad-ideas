@@ -1,6 +1,8 @@
 // Merge server-confirmed completed places into this device without discarding
 // local discoveries or completions. A recorded score means the quiz was finished.
-export function mergeRemoteProgress(progress, remoteScores, validPlaceIds) {
+export function mergeRemoteProgress(progress, remoteScores, validPlaceIds, { skipRemote = false } = {}) {
+  if (skipRemote) return { progress, changed: false };
+
   const discovered = [...new Set(progress.discovered)];
   const completed = [...new Set(progress.completed)];
   const discoveredSet = new Set(discovered);

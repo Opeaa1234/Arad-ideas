@@ -37,6 +37,11 @@ export function createUserStore(userId) {
     // True once this device has saved any progress for this account.
     hasLocalProgress() { return get('progress') !== null; },
 
+    // A deliberate local reset takes precedence over older remote completions
+    // on this device. The online leaderboard remains untouched.
+    isProgressReset() { return get('progress-reset') === '1'; },
+    markProgressReset() { set('progress-reset', '1'); },
+
     // { placeId: bestScore } from the account, or null if it can't be reached.
     async loadRemoteScores() {
       try {

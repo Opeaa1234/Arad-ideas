@@ -366,7 +366,10 @@ async function syncFromAccount(user) {
     if (local === undefined || score > local) store.setBest(id, score);
   }
 
-  const merged = mergeRemoteProgress(S.prog, remote, new Set(S.byId.keys()));
+  // A deliberate local reset must not be undone by the account's older completions.
+  const merged = mergeRemoteProgress(S.prog, remote, new Set(S.byId.keys()), {
+    skipRemote: store.isProgressReset(),
+  });
   if (merged.changed) {
     S.prog = merged.progress;
     saveProg(); listSig = ''; clearRoute();
@@ -984,6 +987,7 @@ function updateAll() {
 function resetProgress() {
   if (!window.confirm('Sigur vrei să iei traseul de la capăt? Progresul local și scorurile memorate pe acest dispozitiv pentru „' + S.user.name + '” vor fi șterse. Rezultatele din clasamentul online nu vor fi șterse.')) return;
   S.prog = { discovered: [], completed: [] }; saveProg();
+  S.store.markProgressReset();
   S.store.clearBests([...S.path, ...S.sidequestIds]);
   S.quizzes = {}; S.revisitId = null;
   closeSheet(); clearRoute(); listSig = '';

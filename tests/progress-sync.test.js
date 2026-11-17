@@ -46,3 +46,11 @@ test('supports a fresh device and zero-score completed quizzes', () => {
   assert.equal(result.changed, true);
   assert.deepEqual(result.progress, { discovered: ['place-a'], completed: ['place-a'] });
 });
+
+test('does not restore old account completions after an intentional local reset', () => {
+  const reset = { discovered: [], completed: [] };
+  const result = mergeRemoteProgress(reset, { 'place-a': 3, 'place-b': 2 }, valid, { skipRemote: true });
+  assert.equal(result.changed, false);
+  assert.equal(result.progress, reset);
+  assert.deepEqual(result.progress, { discovered: [], completed: [] });
+});
