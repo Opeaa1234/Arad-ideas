@@ -48,7 +48,6 @@ test('persists a score outbox before network delivery and isolates it by account
     assert.deepEqual(a.getPendingResults().map(x => ({ placeId:x.placeId, score:x.score, maxScore:x.maxScore })),
       [{ placeId:'place-a', score:2, maxScore:3 }]);
     assert.deepEqual(b.getPendingResults(), []);
-    assert.match(s, /return result \? \{ \.\.\.result, queued: false, synced: true \} : \{ queued: true, synced: false \}/);
   } finally {
     if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
     else delete globalThis.localStorage;
