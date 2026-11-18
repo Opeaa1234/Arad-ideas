@@ -97,9 +97,10 @@ export function createUserStore(userId) {
     },
     async recordResult(placeId, score, maxScore) {
       const id = this.enqueueResult(placeId, score, maxScore);
-      if (!id) return null;
+      if (!id) return { queued: false, synced: false };
       const outcome = await this.flushPendingResults();
-      return outcome.results[id] || null;
+      const result = outcome.results[id];
+      return result ? { ...result, queued: false, synced: true } : { queued: true, synced: false };
     },
 
     getPhoto(placeId) { const v = get('photo:' + placeId); return v && v.startsWith('data:image/') ? v : null; },
