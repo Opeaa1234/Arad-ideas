@@ -949,7 +949,12 @@ function afterCompletion(p) {
 // the player's first attempt here; a perfect first attempt is a first blood.
 function recordAttempt(p, q, n) {
   S.store.recordResult(p.id, q.score, n).then(res => {
-    if (!res) { toast('Rezultatul nu a putut fi salvat în cont. Verifică conexiunea.'); return; }
+    if (!res.synced) {
+      toast(res.queued
+        ? 'Rezultatul este păstrat pe acest dispozitiv și așteaptă sincronizarea.'
+        : 'Rezultatul nu a putut fi păstrat. Verifică spațiul disponibil în browser.');
+      return;
+    }
     if (!res.first_attempt || !res.first_blood) return;
     q.firstBlood = true;
     toast('First blood la ' + p.name + '! Puncte duble.');
