@@ -481,6 +481,7 @@ function mapPadding() {
 function startGPS() {
   if (!('geolocation' in navigator)) { S.gpsErr = 'Browserul tău nu oferă acces la locație.'; updateAll(); return; }
   stopGPS();
+  S.gpsSamples = [];
   S.gpsErr = null;
   try {
     S.watchId = navigator.geolocation.watchPosition(onGPS, onGPSErr, { enableHighAccuracy: true, maximumAge: 2000, timeout: 30000 });
@@ -496,7 +497,7 @@ function onGPS(p) {
   if (screen !== 'app' || !S.user) return;
   S.gpsErr = null;
   const accuracy = p.coords.accuracy;
-  S.lastGps = { lat: p.coords.latitude, lon: p.coords.longitude, acc: Number.isFinite(accuracy) && accuracy >= 0 ? accuracy : null };
+  S.lastGps = { lat: p.coords.latitude, lon: p.coords.longitude, acc: Number.isFinite(accuracy) && accuracy >= 0 ? accuracy : null, time: Date.now() };
   S.gpsSamples.push(S.lastGps);
   if (S.gpsSamples.length > 2) S.gpsSamples.shift();
   if (!S.sim) S.pos = S.lastGps;
@@ -526,6 +527,7 @@ function hasStableNearbyFix(p) {
   if (S.gpsSamples.length < 2) return false;
   const [a, b] = S.gpsSamples;
   if (!isUsablePosition(a) || !isUsablePosition(b)) return false;
+  if (!Number.isFinite(a.time) || !Number.isFinite(b.time) || b.time - a.time > 10000 || b.time < a.time) return false;
   if (haversine(a.lat, a.lon, b.lat, b.lon) > 25) return false;
   return isConfidentlyWithinRadius(a, p, S.radius)
     && isConfidentlyWithinRadius(b, p, S.radius);
@@ -769,7 +771,7 @@ function renderList() {
     const li = document.getElementById('pl-' + id); if (!li) return;
     li.classList.toggle('on', disc && inr);
     document.getElementById('st-' + id).textContent = d === null ? ''
-      : disc ? (inr ? (d < ARRIVED_METERS ? 'Ești aici' : 'Se poate deschide · la ' + fmtDist(d)) : 'La ' + fmtDist(d) + ' · se deschide de aproape')
+      : disc ? (inr ? ((S.sim ? d < ARRIVED_METERS : isConfidentlyWithinRadius(S.pos, p, ARRIVED_METERS, 15)) ? 'Ești aici' : 'Se poate deschide · la ' + fmtDist(d)) : 'La ' + fmtDist(d) + ' · se deschide de aproape')
         : 'La ' + fmtDist(d) + ' de tine';
     const op = document.getElementById('op-' + id); if (op) op.disabled = disc ? !inr : false;
   });
@@ -794,7 +796,7 @@ function renderSideQuestList() {
     const tag = done ? '<span class="tag done">Completată</span>' : '<span class="tag cur">Aici</span>';
     return `<li class="place on ${done ? 'done' : ''}">
       <div class="num side">${done ? '✓' : '★'}</div>
-      <div class="pinfo"><strong>${esc(p.name)}</strong>${tag}<div class="sub2">${esc(p.kind || p.category)}</div><div class="status">${d < 25 ? 'Ești aici' : 'La ' + fmtDist(d)}</div></div>
+      <div class="pinfo"><strong>${esc(p.name)}</strong>${tag}<div class="sub2">${esc(p.kind || p.category)}</div><div class="status">${(S.sim ? d < 25 : isConfidentlyWithinRadius(S.pos, p, 25, 15)) ? 'Ești aici' : 'La ' + fmtDist(d)}</div></div>
       <div class="pbtns"><button class="btn primary" data-act="open" data-id="${id}">Deschide</button></div>
     </li>`;
   }).join('');
