@@ -50,3 +50,20 @@ export function lineLength(line) {
   for (let i = 1; i < line.length; i++) s += haversine(line[i - 1][0], line[i - 1][1], line[i][0], line[i][1]);
   return s;
 }
+
+
+// A browser GPS fix is usable only when its accuracy is explicitly known
+// and within the configured safety limit. Missing accuracy is never zero.
+export function isUsablePosition(pos, maxAccuracy = 35) {
+  return !!pos && Number.isFinite(pos.lat) && Number.isFinite(pos.lon)
+    && Number.isFinite(pos.acc) && pos.acc >= 0 && pos.acc <= maxAccuracy;
+}
+
+// Conservative geofence: the reported distance plus its uncertainty must
+// fit inside the discovery radius.
+export function isConfidentlyWithinRadius(pos, target, radius, maxAccuracy = 35) {
+  if (!isUsablePosition(pos, maxAccuracy) || !target
+    || !Number.isFinite(target.lat) || !Number.isFinite(target.lon)
+    || !Number.isFinite(radius) || radius < 0) return false;
+  return haversine(pos.lat, pos.lon, target.lat, target.lon) + pos.acc <= radius;
+}
