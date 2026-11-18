@@ -13,14 +13,15 @@ export async function getMyScores() {
 
 // Records one finished quiz at a place. The first attempt decides "first blood".
 // Returns { first_attempt, first_blood, best_score }.
-export async function recordPlaceResult(placeId, score, maxScore) {
+export async function recordPlaceResult(placeId, score, maxScore, submissionId) {
 
     const { data, error } = await supabase.rpc(
-        'record_place_result',
+        'record_place_result_idempotent',
         {
             p_place_id: placeId,
             p_score: score,
-            p_max: maxScore
+            p_max: maxScore,
+            p_submission_id: submissionId
         }
     );
 
