@@ -61,3 +61,10 @@ test('GPS discovery requires two stable, accurate readings', () => {
 test('missing GPS accuracy is preserved as unknown rather than zero', () => {
   assert.match(appSource, /acc: Number\.isFinite\(accuracy\) && accuracy >= 0 \? accuracy : null/);
 });
+
+
+test('stable GPS samples must be recent and from the current watch session', () => {
+  assert.match(appSource, /S\.gpsSamples = \[\]/);
+  assert.match(appSource, /b\.time - a\.time > 10000/);
+  assert.match(appSource, /b\.time < a\.time/);
+});
