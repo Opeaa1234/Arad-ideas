@@ -49,3 +49,15 @@ test('ignores GPS errors after leaving the map or entering simulation mode', () 
   assert.match(onGPSErr[1], /screen !== 'app' \|\| !S\.user \|\| S\.sim/);
   assert.match(onGPSErr[1], /return/);
 });
+
+
+test('GPS discovery requires two stable, accurate readings', () => {
+  assert.match(appSource, /function hasStableNearbyFix\(p\)/);
+  assert.match(appSource, /S\.gpsSamples\.length < 2/);
+  assert.match(appSource, /haversine\(a\.lat, a\.lon, b\.lat, b\.lon\) > 25/);
+  assert.match(appSource, /!hasStableNearbyFix\(p\)/);
+});
+
+test('missing GPS accuracy is preserved as unknown rather than zero', () => {
+  assert.match(appSource, /acc: Number\.isFinite\(accuracy\) && accuracy >= 0 \? accuracy : null/);
+});
