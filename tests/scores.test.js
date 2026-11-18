@@ -23,11 +23,24 @@ test('cross-device scores and leaderboard share place_results', async () => {
   assert.match(scores, /rpc\('get_my_place_results'\)/);
   assert.doesNotMatch(scores, /from\('place_scores'\)/);
   assert.match(store, /Number\(r\.best_score\)/);
-  assert.match(store, /recordPlaceResult\(placeId, score, maxScore\)/);
+  assert.match(store, /recordPlaceResult\([\s\S]*?item\.placeId, item\.score, item\.maxScore, item\.id/);
+  assert.match(store, /getPendingResults\(\)/);
+  assert.match(store, /score-outbox/);
+  assert.match(scores, /record_place_result_idempotent/);
+  assert.match(scores, /p_submission_id: submissionId/);
   assert.doesNotMatch(store, /saveRemoteScore/);
   assert.doesNotMatch(app, /saveRemoteScore/);
   assert.match(app, /Progresul local și scorurile memorate pe acest dispozitiv[\s\S]*?Rezultatele din clasamentul online nu vor fi șterse/);
   assert.doesNotMatch(readme, /save_place_score|in `place_scores`/);
+});
+
+test('idempotency migration replays the stored acknowledgement for duplicate submissions', async () => {
+  const sql = await read('../database/migrations/20261118_idempotent_score_submissions.sql');
+  assert.match(sql, /primary key \(user_id, submission_id\)/i);
+  assert.match(sql, /record_place_result_idempotent/i);
+  assert.match(sql, /on conflict \(user_id, submission_id\) do nothing/i);
+  assert.match(sql, /return saved::json/i);
+  assert.match(sql, /record_place_result\(p_place_id, p_score, p_max\)/i);
 });
 
 test('score RPC allowlist matches every real trail location and question count', async () => {
