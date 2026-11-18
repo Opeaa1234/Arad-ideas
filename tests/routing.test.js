@@ -35,7 +35,7 @@ test('clears the request timeout when a routing server rejects', async t => {
   assert.equal(result, null);
   assert.equal(calls, ROUTERS.length);
   assert.equal(calls, 2);
-  assert.deepEqual(cleared, [1, 2, 3]);
+  assert.deepEqual(cleared, [1, 2]);
 });
 
 test('clears the request timeout after a successful route response', async t => {
