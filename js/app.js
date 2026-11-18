@@ -241,6 +241,7 @@ function renderRouteChoices() {
 function enterApp(user) {
   S.user = user;
   S.store = createUserStore(user.id);
+  S.store.flushPendingResults();
   S.prog = S.store.loadProgress();
   S.prog.discovered = S.prog.discovered.filter(id => S.byId.has(id));
   S.prog.completed = S.prog.completed.filter(id => S.byId.has(id));
@@ -1112,6 +1113,7 @@ function bindEvents() {
     else if (document.body.classList.contains('panel-open')) setPanel('');
     else closeMenu();
   });
+  window.addEventListener('online', () => { if (S.store) S.store.flushPendingResults(); });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopGPS();
     else if (screen === 'app' && S.user && !S.sim && S.watchId === null) startGPS();
