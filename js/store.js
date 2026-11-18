@@ -76,13 +76,15 @@ export function createUserStore(userId) {
     },
     async flushPendingResults() {
       const rows = this.getPendingResults();
-      if (!rows.length) return { sent: 0, pending: 0 };
+      if (!rows.length) return { sent: 0, pending: 0, results: {} };
       let sent = 0;
+      const results = {};
       for (const item of rows) {
         try {
           const result = await (await backend()).recordPlaceResult(
             item.placeId, item.score, item.maxScore, item.id,
           );
+          results[item.id] = result;
           const current = this.getPendingResults();
           if (!set('score-outbox', JSON.stringify(current.filter(r => r.id !== item.id)))) break;
           sent++;
@@ -91,22 +93,13 @@ export function createUserStore(userId) {
           break;
         }
       }
-      return { sent, pending: this.getPendingResults().length };
+      return { sent, pending: this.getPendingResults().length, results };
     },
     async recordResult(placeId, score, maxScore) {
       const id = this.enqueueResult(placeId, score, maxScore);
       if (!id) return null;
-      await this.flushPendingResults();
-      // An acknowledgement may have been received and removed from the queue.
-      // The caller needs the server response for first-attempt/first-blood UI;
-      // retrieve it from the dedicated acknowledgement cache.
-      return this.getAcknowledgement(id);
-    },
-    getAcknowledgement(id) {
-      try {
-        const rows = JSON.parse(get('score-acks') || '{}');
-        return rows[id] || null;
-      } catch { return null; }
+      const outcome = await this.flushPendingResults();
+      return outcome.results[id] || null;
     },
 
     getPhoto(placeId) { const v = get('photo:' + placeId); return v && v.startsWith('data:image/') ? v : null; },
