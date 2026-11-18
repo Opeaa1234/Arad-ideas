@@ -35,7 +35,6 @@ export const TILES = {
 // Walking route services, tried in order. {c} = "lon,lat;lon,lat".
 export const ROUTERS = [
   { url: 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/{c}', label: 'Traseu pietonal' },
-  { url: 'https://routing.openstreetmap.de/routed-foot/route/v1/driving/{c}', label: 'Traseu pietonal' },
   { url: 'https://router.project-osrm.org/route/v1/foot/{c}', label: 'Traseu pe străzi (aproximativ pentru mers pe jos)' },
 ];
 export const ROUTE_QUERY = '?overview=full&geometries=geojson&steps=true';
