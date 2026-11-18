@@ -683,9 +683,9 @@ function renderRoute() {
     $('#rNext').textContent = 'Căutăm cel mai bun drum…';
     $('#rNote').textContent = ''; $('#rSteps').innerHTML = '';
   } else {
-    draw([], [[[S.pos.lat, S.pos.lon], [p.lat, p.lon]]]);
-    $('#rSummary').textContent = fmtDist(d) + ' în linie dreaptă';
-    $('#rNext').textContent = 'Indicațiile pe străzi nu sunt disponibile acum. Mergi în direcția liniei punctate de pe hartă.';
+    draw([], []);
+    $('#rSummary').textContent = 'Rută pietonală indisponibilă';
+    $('#rNext').textContent = 'Nu avem acum o rută pietonală verificată. Nu urma o linie dreaptă prin hartă; încearcă din nou mai târziu sau folosește un traseu pietonal cunoscut.';
     $('#rNote').textContent = 'Serviciul de rute nu răspunde; reîncercăm automat.';
     $('#rSteps').innerHTML = '';
   }
