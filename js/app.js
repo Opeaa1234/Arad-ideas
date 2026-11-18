@@ -5,7 +5,7 @@ import { loadTrail } from './data.js';
 import { auth, validateDisplayName, validateEmail, validatePassword, MIN_PASSWORD, oauthError } from './auth.js';
 import { createUserStore } from './store.js';
 import { mergeRemoteProgress } from './progress-sync.js';
-import { haversine, fmtDist, fmtDur, nearestOnLine, lineLength } from './geo.js';
+import { haversine, fmtDist, fmtDur, nearestOnLine, lineLength, isUsablePosition, isConfidentlyWithinRadius } from './geo.js';
 import { fetchRoute, stepText, currentStep } from './routing.js';
 import { findPhoto, searchPhotosUrl, fileToDataUrl } from './photos.js';
 import { TrailMap } from './map.js';
@@ -25,7 +25,7 @@ const S = {
   user: null, store: null,
   prog: { discovered: [], completed: [] },
   radius: DEFAULT_RADIUS,
-  sim: false, simPos: null, lastGps: null, pos: null, gpsErr: null, watchId: null,
+  sim: false, simPos: null, lastGps: null, gpsSamples: [], pos: null, gpsErr: null, watchId: null,
   revisitId: null,          // a completed stop the user chose to walk back to
   sheetId: null, sheetMode: null,
   showAllShadows: false,
@@ -58,7 +58,8 @@ const canOpen = onMap;
 const stopNo = id => S.path.indexOf(id) + 1;
 const displayName = p => isSideQuest(p.id) || isDisc(p.id) ? p.name : 'Oprirea misterioasă ' + stopNo(p.id);
 const distTo = p => S.pos ? haversine(S.pos.lat, S.pos.lon, p.lat, p.lon) : null;
-const inRadius = p => { const d = distTo(p); return d !== null && d <= S.radius; };
+const inRadius = p => S.sim ? !!S.pos && haversine(S.pos.lat, S.pos.lon, p.lat, p.lon) <= S.radius
+  : isConfidentlyWithinRadius(S.pos, p, S.radius);
 // Directions always point at the current stop, unless the user picked a finished stop to revisit.
 const routeTargetId = () => (S.revisitId && isDone(S.revisitId)) ? S.revisitId : activeId();
 const saveProg = () => S.store && S.store.saveProgress(S.prog);
@@ -494,7 +495,10 @@ function onGPS(p) {
   // clearWatch() may not cancel a callback already queued by the browser.
   if (screen !== 'app' || !S.user) return;
   S.gpsErr = null;
-  S.lastGps = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy || 0 };
+  const accuracy = p.coords.accuracy;
+  S.lastGps = { lat: p.coords.latitude, lon: p.coords.longitude, acc: Number.isFinite(accuracy) && accuracy >= 0 ? accuracy : null };
+  S.gpsSamples.push(S.lastGps);
+  if (S.gpsSamples.length > 2) S.gpsSamples.shift();
   if (!S.sim) S.pos = S.lastGps;
   updateAll();
 }
@@ -518,10 +522,19 @@ function setSim(on) {
 }
 
 /* ===================== TRAIL LOGIC ===================== */
+function hasStableNearbyFix(p) {
+  if (S.gpsSamples.length < 2) return false;
+  const [a, b] = S.gpsSamples;
+  if (!isUsablePosition(a) || !isUsablePosition(b)) return false;
+  if (haversine(a.lat, a.lon, b.lat, b.lon) > 25) return false;
+  return isConfidentlyWithinRadius(a, p, S.radius)
+    && isConfidentlyWithinRadius(b, p, S.radius);
+}
+
 function checkDiscovery() {
   const id = activeId(); if (!id || isDisc(id)) return;
   const p = place(id);
-  if (!inRadius(p)) return;
+  if (!inRadius(p) || (!S.sim && !hasStableNearbyFix(p))) return;
   S.prog.discovered.push(id); saveProg();
   toast('Ai descoperit: ' + p.name + '!');
   if (!p.trivia.length) completeStop(id);
@@ -531,7 +544,7 @@ function checkSideQuestDiscovery() {
   S.sidequestIds.forEach(id => {
     if (isDisc(id)) return;
     const p = place(id);
-    if (!inRadius(p)) return;
+    if (!inRadius(p) || (!S.sim && !hasStableNearbyFix(p))) return;
     S.prog.discovered.push(id); saveProg();
     toast('Ai găsit o misiune secundară: ' + p.name + '!');
   });
@@ -592,7 +605,8 @@ function maybeReroute() {
   const id = routeTargetId();
   if (!S.pos || !id) { if (routeState.status !== 'idle') clearRoute(); return; }
   const p = place(id);
-  if (haversine(S.pos.lat, S.pos.lon, p.lat, p.lon) < ARRIVED_METERS) { if (routeState.status !== 'arrived') clearRoute('arrived'); return; }
+  if ((S.sim && haversine(S.pos.lat, S.pos.lon, p.lat, p.lon) < ARRIVED_METERS)
+    || (!S.sim && isConfidentlyWithinRadius(S.pos, p, ARRIVED_METERS, 15))) { if (routeState.status !== 'arrived') clearRoute('arrived'); return; }
   const changed = routeState.targetId !== id || routeState.status === 'arrived' || routeState.status === 'idle';
   const age = Date.now() - routeState.t;
   const retry = routeState.status === 'error' && age > 20000;
@@ -649,7 +663,7 @@ function renderRoute() {
   const p = place(id), d = haversine(S.pos.lat, S.pos.lon, p.lat, p.lon);
   empty.hidden = true; body.hidden = false;
   $('#rTitle').textContent = (id === S.revisitId ? 'Revii la ' : stopNo(id) + '. ') + displayName(p);
-  if (routeState.status === 'arrived' || d < ARRIVED_METERS) {
+  if (routeState.status === 'arrived' || (S.sim ? d < ARRIVED_METERS : isConfidentlyWithinRadius(S.pos, p, ARRIVED_METERS, 15))) {
     $('#rSummary').textContent = 'Ai ajuns';
     $('#rNext').textContent = isDisc(id) ? 'Deschide oprirea din listă ca să citești povestea și să răspunzi la întrebări.' : 'Mai fă câțiva pași: locul se dezvăluie imediat.';
     $('#rNote').textContent = ''; $('#rSteps').innerHTML = ''; draw([], []); return;
