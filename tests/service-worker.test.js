@@ -13,7 +13,7 @@ test('offline shell caches only the explicit public app asset allowlist', async 
   assert.match(sw, /url\.origin !== self\.location\.origin/);
   assert.match(sw, /request\.method !== 'GET'/);
   assert.match(sw, /Never intercept cross-origin traffic/);
-  assert.match(sw, /Never caching auth\/session\/API responses/);
+  assert.match(sw, /prevents caching auth\/session\/API responses/);
 });
 
 test('offline registration is optional and requires a secure context', async () => {
