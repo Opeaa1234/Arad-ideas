@@ -191,9 +191,14 @@ async function googleAuth() {
 }
 
 async function signOut() {
+  try {
+    await auth.signOut();
+  } catch (err) {
+    toast(err.message || 'Nu te-am putut deconecta. Contul rămâne activ; încearcă din nou.');
+    return;
+  }
   closeSheet();
   stopGPS();
-  await auth.signOut();
   S.user = null; S.store = null;
   $('#authPass').value = '';
   renderWelcome(); showScreen('welcome');
@@ -1153,7 +1158,15 @@ async function boot() {
   const toRecovery = () => { authMode = 'recovery'; S.user = null; stopGPS(); renderWelcome(); showScreen('welcome'); };
   auth.onPasswordRecovery(toRecovery);
   if (RECOVERY_IN_URL) { toRecovery(); return; }
-  const user = await auth.getCurrentUser();
+  let user;
+  try {
+    user = await auth.getCurrentUser();
+  } catch (e) {
+    if (authMode === 'recovery') return;
+    renderWelcome(); showScreen('welcome');
+    authMsg('Nu am putut verifica dacă ești conectat. Nu înseamnă că ai fost deconectat, iar progresul tău local nu a fost șters. Verifică internetul și reîncarcă pagina.');
+    return;
+  }
   if (authMode === 'recovery') return;
   if (user) enterApp(user);
   else {
