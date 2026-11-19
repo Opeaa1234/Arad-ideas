@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileToDataUrl, findPhoto, safePhotoUrl, safeAttributionUrl, isReleaseReadyPhotoAttribution } from '../js/photos.js';
+import { readFile } from 'node:fs/promises';
 
 function installImageMocks(t, { width = 1600, height = 1200, context = true } = {}) {
   const saved = {
@@ -190,4 +191,17 @@ test('Commons images with incomplete rights metadata are withheld', async t => {
     }
   });
   assert.equal(await findPhoto({ photo: 'commons:Missing author test.jpg' }, null), null);
+});
+
+test('every local catalogue photo without verified rights metadata stays hidden', async () => {
+  const data = JSON.parse(await readFile(new URL('../data/game-data.json', import.meta.url), 'utf8'));
+  const unverified = data.places.filter(place =>
+    typeof place.photo === 'string' && place.photo && !place.photo.startsWith('commons:')
+    && !isReleaseReadyPhotoAttribution(place.photoAttribution)
+  );
+  assert.ok(unverified.length > 0);
+  for (const place of unverified) assert.equal(await findPhoto(place, null), null, place.id);
+  const policy = await readFile(new URL('../assets/photos/README.md', import.meta.url), 'utf8');
+  assert.match(policy, /does not make the underlying file private/i);
+  assert.match(policy, /release blocker/i);
 });
