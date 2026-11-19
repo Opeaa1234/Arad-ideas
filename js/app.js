@@ -889,7 +889,10 @@ async function renderPhoto() {
   if (ph) box.innerHTML = `<img src="${esc(ph.src)}" alt="Fotografie: ${esc(p.name)}">`;
   else box.innerHTML = `<div class="photo-empty"><strong>Încă nu avem o fotografie</strong>
       <a href="${esc(searchPhotosUrl(p))}" target="_blank" rel="noopener">Caută fotografii cu acest loc ↗</a></div>`;
-  const credit = ph ? (ph.link ? `<a href="${esc(ph.link)}" target="_blank" rel="noopener">${esc(ph.credit)}</a>` : esc(ph.credit)) : 'Poți adăuga propria fotografie';
+  const credit = ph ? [
+    ph.link ? `<a href="${esc(ph.link)}" target="_blank" rel="noopener">${esc(ph.credit)}</a>` : esc(ph.credit),
+    ph.licenseLink ? `<a href="${esc(ph.licenseLink)}" target="_blank" rel="noopener">Licență / dovadă</a>` : ''
+  ].filter(Boolean).join(' · ') : 'Poți adăuga propria fotografie';
   cap.innerHTML = `<span>${credit}</span>
     <span class="row" style="gap:6px"><label class="btn sm">${own ? 'Schimbă fotografia' : 'Adaugă fotografia ta'}<input type="file" accept="image/*" hidden id="photoIn"></label>${own ? '<button class="btn sm" data-act="rmphoto">Șterge</button>' : ''}</span>`;
 }
