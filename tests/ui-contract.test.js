@@ -25,8 +25,8 @@ test('authentication form has labelled email, password and display-name inputs',
   for (const id of ['authForm', 'authEmail', 'authPass', 'authName', 'authSubmit', 'authErr', 'authOk']) {
     assert.ok(hasId(id), 'missing authentication element #' + id);
   }
-  assert.match(html, /id="fEmail"[^>]*class="field"/);
-  assert.match(html, /id="fPass"[^>]*class="field"/);
+  assert.match(html, /class="field"[^>]*id="fEmail"/);
+  assert.match(html, /class="field"[^>]*id="fPass"/);
 });
 
 test('authentication feedback uses accessible status and alert roles', () => {
