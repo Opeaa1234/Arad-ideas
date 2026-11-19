@@ -54,3 +54,14 @@ test('score RPC allowlist matches every real trail location and question count',
     assert.ok(sql.includes(tuple), `missing score allowlist entry: ${tuple}`);
   }
 });
+
+test('idempotency migration uses invoker rights and per-user RLS', async () => {
+  const sql = await read('../database/migrations/20261118_idempotent_score_submissions.sql');
+  assert.match(sql, /security invoker/i);
+  assert.doesNotMatch(sql, /security definer/i);
+  assert.match(sql, /enable row level security/i);
+  assert.match(sql, /for select to authenticated[\\s\\S]*?auth\\.uid\\(\\).*?user_id/i);
+  assert.match(sql, /for insert to authenticated[\\s\\S]*?with check[\\s\\S]*?auth\\.uid\\(\\).*?user_id/i);
+  assert.match(sql, /for update to authenticated[\\s\\S]*?using[\\s\\S]*?with check[\\s\\S]*?auth\\.uid\\(\\).*?user_id/i);
+  assert.match(sql, /from anon, public/i);
+});
