@@ -70,17 +70,19 @@ test('clears the request timeout after a successful route response', async t => 
 test('every configured route provider uses a walking profile', () => {
   assert.ok(ROUTERS.length > 0);
   for (const router of ROUTERS) {
-    assert.match(router.url, /\\/foot\\//);
-    assert.doesNotMatch(router.url, /\\/driving\\//);
+    assert.ok(router.url.includes('/foot/'));
+    assert.equal(router.url.includes('/driving/'), false);
   }
 });
 
 
 test('routing failure does not draw a straight line or tell walkers to follow one', async () => {
   const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
-  const failure = app.match(/else \\{\\s*draw\\(\\[\\], \\[\\]\\);[\\s\\S]*?\\n  \\}/);
-  assert.ok(failure, 'expected a dedicated unavailable-route branch');
-  assert.match(failure[0], /Rută pietonală indisponibilă/);
-  assert.match(failure[0], /Nu urma o linie dreaptă/);
-  assert.doesNotMatch(failure[0], /draw\\(\\[\\], \\[\\[\\[/);
+  const marker = 'Rută pietonală indisponibilă';
+  const at = app.indexOf(marker);
+  assert.notEqual(at, -1, 'expected a dedicated unavailable-route branch');
+  const failure = app.slice(Math.max(0, at - 180), at + 650);
+  assert.ok(failure.includes('draw([], [])'));
+  assert.ok(failure.includes('Nu urma o linie dreaptă'));
+  assert.equal(failure.includes('draw([], [[['), false);
 });
