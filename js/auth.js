@@ -41,7 +41,7 @@ export function validatePassword(raw) {
 }
 
 // Turns Supabase errors into short Romanian messages.
-function translate(e) {
+export function authFailure(e) {
   const m = String((e && (e.message || e.error_description)) || e || '');
   const code = e && e.code;
   if (code === 'invalid_credentials' || /invalid login credentials/i.test(m)) return 'Email sau parolă greșită.';
@@ -116,21 +116,21 @@ export const auth = {
       return u ? await toUser(u, b) : null;
     } catch (e) {
       console.warn('[auth] could not verify the current session', e);
-      throw new Error(translate(e));
+      throw new Error(authFailure(e));
     }
   },
 
   async signIn(email, password) {
     const b = await api();
     try { const d = await b.signIn(email.trim(), password); return await toUser(d.user, b); }
-    catch (e) { throw new Error(translate(e)); }
+    catch (e) { throw new Error(authFailure(e)); }
   },
 
   async signUp(name, email, password) {
     const b = await api();
     let d;
     try { d = await b.signUp(email.trim(), password, name, returnUrl()); }
-    catch (e) { throw new Error(translate(e)); }
+    catch (e) { throw new Error(authFailure(e)); }
     // With "Confirm email" on, Supabase returns no session until the link is opened.
     // An existing confirmed address also comes back without a session (and no identities).
     if (d.user && Array.isArray(d.user.identities) && d.user.identities.length === 0) {
@@ -145,7 +145,7 @@ export const auth = {
     try { await b.signInWithGoogle(returnUrl()); }
     catch (e) {
       if ((e && e.code === 'provider_disabled') || /provider is not enabled|unsupported provider/i.test(String(e && e.message))) throw new Error('Conectarea cu Google nu este activată încă în Supabase (Authentication → Providers → Google).');
-      throw new Error(translate(e));
+      throw new Error(authFailure(e));
     }
   },
 
@@ -154,20 +154,20 @@ export const auth = {
     try { await b.signOut(); }
     catch (e) {
       console.warn('[auth] sign out failed', e);
-      throw new Error(translate(e));
+      throw new Error(authFailure(e));
     }
   },
 
   async requestPasswordReset(email) {
     const b = await api();
     try { await b.requestPasswordReset(email.trim(), returnUrl()); }
-    catch (e) { throw new Error(translate(e)); }
+    catch (e) { throw new Error(authFailure(e)); }
   },
 
   async setNewPassword(password) {
     const b = await api();
     try { await b.updatePassword(password); }
-    catch (e) { throw new Error(translate(e)); }
+    catch (e) { throw new Error(authFailure(e)); }
   },
 
   async onPasswordRecovery(callback) {
