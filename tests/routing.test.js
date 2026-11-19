@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fetchRoute } from '../js/routing.js';
+import { ROUTERS } from '../js/config.js';
 
 function mockTimers(t) {
   const originalSetTimeout = globalThis.setTimeout;
@@ -32,8 +33,9 @@ test('clears the request timeout when a routing server rejects', async t => {
   );
 
   assert.equal(result, null);
-  assert.equal(calls, 3);
-  assert.deepEqual(cleared, [1, 2, 3]);
+  assert.equal(calls, ROUTERS.length);
+  assert.equal(calls, 2);
+  assert.deepEqual(cleared, [1, 2]);
 });
 
 test('clears the request timeout after a successful route response', async t => {
@@ -61,4 +63,13 @@ test('clears the request timeout after a successful route response', async t => 
   assert.equal(result.label, 'Traseu pietonal');
   assert.deepEqual(result.coords, [[46.17, 21.32], [46.18, 21.33]]);
   assert.deepEqual(cleared, [1]);
+});
+
+
+test('every configured route provider uses a walking profile', () => {
+  assert.ok(ROUTERS.length > 0);
+  for (const router of ROUTERS) {
+    assert.match(router.url, /\\/foot\\//);
+    assert.doesNotMatch(router.url, /\\/driving\\//);
+  }
 });
