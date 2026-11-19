@@ -119,3 +119,75 @@ test('unverified local and Wikipedia fallback photos are not displayed', async (
   }, null), null);
 });
 
+
+test('Commons images require and preserve author and exact licence links', async t => {
+  const saved = { fetch: globalThis.fetch, Image: globalThis.Image, document: globalThis.document };
+  t.after(() => {
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete globalThis[key];
+      else globalThis[key] = value;
+    }
+  });
+  globalThis.document = {
+    createElement(name) {
+      assert.equal(name, 'div');
+      return {
+        textContent: '',
+        set innerHTML(value) { this.textContent = String(value).replace(/<[^>]*>/g, ''); }
+      };
+    }
+  };
+  globalThis.Image = class {
+    set src(value) { this.naturalWidth = 800; this.onload(); }
+  };
+  globalThis.fetch = async () => ({
+    ok: true,
+    async json() {
+      return { query: { pages: { 1: { imageinfo: [{
+        thumburl: 'https://upload.wikimedia.org/example.jpg',
+        descriptionurl: 'https://commons.wikimedia.org/wiki/File:Verified_test_image.jpg',
+        extmetadata: {
+          Artist: { value: 'Photographer One' },
+          LicenseShortName: { value: 'CC BY-SA 4.0' },
+          LicenseUrl: { value: 'https://creativecommons.org/licenses/by-sa/4.0/' }
+        }
+      }] } } } };
+    }
+  });
+  const photo = await findPhoto({ photo: 'commons:Verified test image.jpg' }, null);
+  assert.equal(photo.credit, 'Foto: Photographer One · CC BY-SA 4.0 · Wikimedia Commons');
+  assert.equal(photo.link, 'https://commons.wikimedia.org/wiki/File:Verified_test_image.jpg');
+  assert.equal(photo.licenseLink, 'https://creativecommons.org/licenses/by-sa/4.0/');
+});
+
+test('Commons images with incomplete rights metadata are withheld', async t => {
+  const saved = { fetch: globalThis.fetch, document: globalThis.document };
+  t.after(() => {
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete globalThis[key];
+      else globalThis[key] = value;
+    }
+  });
+  globalThis.document = {
+    createElement() {
+      return {
+        textContent: '',
+        set innerHTML(value) { this.textContent = String(value).replace(/<[^>]*>/g, ''); }
+      };
+    }
+  };
+  globalThis.fetch = async () => ({
+    ok: true,
+    async json() {
+      return { query: { pages: { 1: { imageinfo: [{
+        thumburl: 'https://upload.wikimedia.org/example-missing.jpg',
+        descriptionurl: 'https://commons.wikimedia.org/wiki/File:Missing_author.jpg',
+        extmetadata: {
+          LicenseShortName: { value: 'CC BY-SA 4.0' },
+          LicenseUrl: { value: 'https://creativecommons.org/licenses/by-sa/4.0/' }
+        }
+      }] } } } };
+    }
+  });
+  assert.equal(await findPhoto({ photo: 'commons:Missing author test.jpg' }, null), null);
+});
