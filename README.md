@@ -130,10 +130,12 @@ The title, HUD, screen frame and touch buttons use the site's theme; the panel u
 
 Each place's `photo` field in `data/game-data.json` can be:
 
-- `commons:File name.jpg` – a free-licensed photo on Wikimedia Commons. The app asks Commons for a 960 px version and shows the author and licence under the photo (linked to the file page), which is what CC BY / CC BY-SA require.
-- a path like `assets/photos/place.jpg` or any image URL, with the credit in `photoCredit`.
+- `commons:File name.jpg` – a Wikimedia Commons file. The app displays it only when the Commons API provides an identifiable author, licence name, licence URL and file-description URL. The source and licence links are shown with the image; a custom `photoCredit` cannot override missing Commons metadata.
+- a path like `assets/photos/place.jpg` or another HTTPS image URL, with a complete `photoAttribution` rights record in `data/game-data.json`. A plain `photoCredit` caption is not proof of permission and is not sufficient.
 
-The team's own photos live in `assets/photos/<place-id>.jpg` (max 1280 px, JPEG). Leave the field empty and the stop shows "Încă nu avem o fotografie" with a link to search for one. Don't hotlink photos from Google Images: they are copyrighted. Use Commons, your own photos, or ones you have permission for.
+A catalogue `photoAttribution` record must include `rightsBasis` (`owned`, `permission` or `license`), `author`, `license`, `attribution`, an HTTPS `sourceUrl`, and an HTTPS `evidenceUrl` pointing to the licence or permission evidence. Keep the original evidence with the editorial records. Photos without complete metadata remain in the repository but are not displayed in the player app until verified. Wikipedia lead images are not used as a fallback because a generic article credit does not identify the individual image's author or licence.
+
+Player-uploaded photos remain local to that player's device/account storage and are labelled as the player's own contribution; they are not treated as approved catalogue assets. Don't hotlink photos from Google Images: online availability is not permission.
 
 ## Leaderboard and first blood
 
