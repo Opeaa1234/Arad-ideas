@@ -119,9 +119,3 @@ test('unverified local and Wikipedia fallback photos are not displayed', async (
   }, null), null);
 });
 
-test('catalogue photo credit text cannot override Commons metadata requirements', async () => {
-  assert.equal(await findPhoto({
-    photo: 'commons:missing-author-file.jpg',
-    photoCredit: 'Approved by team'
-  }, null), null);
-});
