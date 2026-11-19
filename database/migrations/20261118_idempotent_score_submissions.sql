@@ -13,14 +13,33 @@ create table if not exists public.place_result_submissions (
 
 alter table public.place_result_submissions enable row level security;
 revoke all on public.place_result_submissions from anon, authenticated, public;
+grant select, insert, update on public.place_result_submissions to authenticated;
+
+-- The RPC runs as the caller, so RLS remains active. Each account can only
+-- see and maintain its own idempotency records.
+drop policy if exists "score submissions: read own" on public.place_result_submissions;
+create policy "score submissions: read own"
+  on public.place_result_submissions for select to authenticated
+  using ((select auth.uid()) = user_id);
+
+drop policy if exists "score submissions: insert own" on public.place_result_submissions;
+create policy "score submissions: insert own"
+  on public.place_result_submissions for insert to authenticated
+  with check ((select auth.uid()) = user_id);
+
+drop policy if exists "score submissions: update own" on public.place_result_submissions;
+create policy "score submissions: update own"
+  on public.place_result_submissions for update to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 create or replace function public.record_place_result_idempotent(
   p_place_id text, p_score int, p_max int, p_submission_id uuid
 )
 returns json
 language plpgsql
-security definer
-set search_path = public
+security invoker
+set search_path = public, pg_temp
 as $$
 declare
   uid uuid := auth.uid();
