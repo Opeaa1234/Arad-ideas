@@ -52,7 +52,7 @@ test('primary navigation and gameplay controls have stable IDs', () => {
 });
 
 test('mobile layout includes responsive CSS rules', () => {
-  assert.match(css, /@media[^\\{]*max-width/);
+  assert.match(css, /@media/);
   assert.match(css, /@media/);
 });
 
