@@ -8,7 +8,9 @@ test('session storage lookup errors are not interpreted as a signed-out account'
   const [dbAuth, auth] = await Promise.all([
     read('../database/auth.js'), read('../js/auth.js')
   ]);
-  assert.match(dbAuth, /error: sessionError[\\s\\S]*?if \\(sessionError\\) throw sessionError[\\s\\S]*?if \\(!sessionData\\.session\\) return null/);
+  assert.ok(dbAuth.includes('const { data: sessionData, error: sessionError }'));
+  assert.ok(dbAuth.includes('if (sessionError) throw sessionError;'));
+  assert.ok(dbAuth.includes('if (!sessionData.session) return null;'));
   assert.match(auth, /async getCurrentUser\(\)[\s\S]*?could not verify the current session[\s\S]*?throw new Error\(authFailure\(e\)\)/);
   assert.doesNotMatch(auth, /catch \(e\) \{ console\.warn\('\[auth\] no session', e\); return null; \}/);
 });
