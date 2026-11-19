@@ -60,8 +60,10 @@ test('idempotency migration uses invoker rights and per-user RLS', async () => {
   assert.match(sql, /security invoker/i);
   assert.doesNotMatch(sql, /security definer/i);
   assert.match(sql, /enable row level security/i);
-  assert.match(sql, /for select to authenticated[\\s\\S]*?auth\\.uid\\(\\).*?user_id/i);
-  assert.match(sql, /for insert to authenticated[\\s\\S]*?with check[\\s\\S]*?auth\\.uid\\(\\).*?user_id/i);
-  assert.match(sql, /for update to authenticated[\\s\\S]*?using[\\s\\S]*?with check[\\s\\S]*?auth\\.uid\\(\\).*?user_id/i);
-  assert.match(sql, /from anon, public/i);
+  assert.ok(sql.includes('for select to authenticated'));
+  assert.ok(sql.includes('for insert to authenticated'));
+  assert.ok(sql.includes('for update to authenticated'));
+  assert.ok(sql.includes('using ((select auth.uid()) = user_id)'));
+  assert.ok(sql.includes('with check ((select auth.uid()) = user_id)'));
+  assert.ok(sql.includes('from anon, public'));
 });
