@@ -34,3 +34,10 @@ test('password validation enforces the configured minimum without changing the v
   assert.deepEqual(validatePassword('secret'), { password: 'secret' });
   assert.ok(validatePassword('short').error);
 });
+
+
+test('auth service failures are reported instead of being interpreted as a missing session', async () => {
+  const { authFailure } = await import('../js/auth.js');
+  assert.match(authFailure(new Error('Failed to fetch')), /conecta la server/i);
+  assert.notEqual(authFailure(new Error('permission denied')), '');
+});

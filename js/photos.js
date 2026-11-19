@@ -12,8 +12,6 @@ import { WIKI_SUMMARY, WIKI_IMAGE_WIDTH } from './config.js';
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
 const commonsCache = new Map();
 
-// Only load HTTPS images or same-origin relative assets. User uploads are
-// handled separately as data:image URLs and never pass through this helper.
 export function safePhotoUrl(value) {
   if (typeof value !== 'string' || !value.trim() || value.trim().startsWith('//')) return null;
   try {
@@ -26,7 +24,6 @@ export function safePhotoUrl(value) {
   } catch { return null; }
 }
 
-// Attribution links must be HTTPS; unlike image paths, they are always external.
 export function safeAttributionUrl(value) {
   if (typeof value !== 'string' || !value.trim()) return null;
   try {
@@ -34,65 +31,58 @@ export function safeAttributionUrl(value) {
     return url.protocol === 'https:' && !url.username && !url.password ? url.href : null;
   } catch { return null; }
 }
-const plain = html => { const d = document.createElement('div'); d.innerHTML = html || ''; return d.textContent.replace(/\s+/g, ' ').trim(); };
 
-// Looks up a Commons file: a sized image URL plus author and licence for the credit.
-async function commonsPhoto(fileName, credit) {
+const plain = html => {
+  const d = document.createElement('div');
+  d.innerHTML = html || '';
+  return d.textContent.replace(/\\s+/g, ' ').trim();
+};
+
+// Catalogue-managed photos must carry a traceable rights record. A display
+// caption alone is not evidence of ownership, permission, or an open licence.
+export function isReleaseReadyPhotoAttribution(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const text = key => typeof value[key] === 'string' && value[key].trim().length > 0;
+  const basis = ['owned', 'permission', 'license'].includes(value.rightsBasis);
+  return basis && text('author') && text('license') && text('attribution')
+    && !!safeAttributionUrl(value.sourceUrl)
+    && !!safeAttributionUrl(value.evidenceUrl);
+}
+
+async function commonsPhoto(fileName) {
   if (commonsCache.has(fileName)) return commonsCache.get(fileName);
   const job = (async () => {
     const q = new URLSearchParams({
       action: 'query', format: 'json', origin: '*', prop: 'imageinfo',
       titles: 'File:' + fileName, iiprop: 'url|extmetadata', iiurlwidth: String(WIKI_IMAGE_WIDTH),
-      iiextmetadatafilter: 'Artist|LicenseShortName',
+      iiextmetadatafilter: 'Artist|LicenseShortName|LicenseUrl',
     });
     try {
-      const j = await (await fetch(COMMONS_API + '?' + q)).json();
+      const response = await fetch(COMMONS_API + '?' + q);
+      if (!response.ok) return null;
+      const j = await response.json();
       const page = Object.values((j.query && j.query.pages) || {})[0];
       const info = page && page.imageinfo && page.imageinfo[0];
       if (!info) return null;
       const meta = info.extmetadata || {};
       const author = plain(meta.Artist && meta.Artist.value);
       const licence = plain(meta.LicenseShortName && meta.LicenseShortName.value);
+      const licenceUrl = safeAttributionUrl(meta.LicenseUrl && meta.LicenseUrl.value);
+      const sourceUrl = safeAttributionUrl(info.descriptionurl);
       const src = safePhotoUrl(info.thumburl || info.url);
-      if (!src) return null;
+      // Missing any core attribution field means we do not display this image.
+      if (!author || !licence || !licenceUrl || !sourceUrl || !src) return null;
       return {
         src,
-        credit: credit || ['Foto: ' + (author || 'autor necunoscut'), licence, 'Wikimedia Commons'].filter(Boolean).join(' · '),
-        link: safeAttributionUrl(info.descriptionurl),
+        credit: 'Foto: ' + author + ' · ' + licence + ' · Wikimedia Commons',
+        link: sourceUrl,
+        licenseLink: licenceUrl,
+        author,
+        license: licence,
       };
     } catch { return null; }
   })();
   commonsCache.set(fileName, job);
-  return job;
-}
-
-const wikiCache = new Map();
-
-// spec looks like "en:Arad_Administrative_Palace" (language optional, defaults to en).
-async function wikiPhotos(spec) {
-  if (wikiCache.has(spec)) return wikiCache.get(spec);
-  const job = (async () => {
-    const m = spec.match(/^([a-z]{2,3}):(.+)$/);
-    const lang = m ? m[1] : 'en', title = (m ? m[2] : spec).replace(/ /g, '_');
-    try {
-      const res = await fetch(WIKI_SUMMARY(lang, title));
-      if (!res.ok) return [];
-      const j = await res.json();
-      const page = safeAttributionUrl((j.content_urls && j.content_urls.desktop && j.content_urls.desktop.page) || `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title)}`);
-      const credit = { credit: 'Fotografie provizorie de pe Wikipedia', link: page };
-      const out = [];
-      if (j.thumbnail && j.thumbnail.source) {
-        const sized = safePhotoUrl(j.thumbnail.source.replace(/\/\d+px-/, `/${WIKI_IMAGE_WIDTH}px-`));
-        const original = safePhotoUrl(j.thumbnail.source);
-        if (sized) out.push({ src: sized, ...credit });
-        if (original && original !== sized) out.push({ src: original, ...credit });
-      }
-      const original = j.originalimage && safePhotoUrl(j.originalimage.source);
-      if (original && !out.some(item => item.src === original)) out.push({ src: original, ...credit });
-      return out;
-    } catch { return []; }
-  })();
-  wikiCache.set(spec, job);
   return job;
 }
 
@@ -108,19 +98,26 @@ function loads(src) {
 }
 
 // Resolves to { src, credit, link, own } or null.
+// Wikipedia lead images are deliberately not used: the summary API's generic
+// page attribution does not establish the individual image's author/licence.
 export async function findPhoto(place, ownPhoto) {
   if (ownPhoto) return { src: ownPhoto, credit: 'Fotografia ta', own: true };
   const photo = typeof place.photo === 'string' ? place.photo : '';
   if (photo.startsWith('commons:')) {
-    const c = await commonsPhoto(photo.slice(8).trim(), place.photoCredit);
+    const c = await commonsPhoto(photo.slice(8).trim());
     if (c && await loads(c.src)) return c;
-  } else if (photo) {
-    const src = safePhotoUrl(photo);
-    const c = src && { src, credit: place.photoCredit || 'Fotografie' };
-    if (c && await loads(c.src)) return c;
+    return null;
   }
-  if (place.wikipedia) {
-    for (const c of await wikiPhotos(place.wikipedia)) if (await loads(c.src)) return c;
+  if (photo && isReleaseReadyPhotoAttribution(place.photoAttribution)) {
+    const src = safePhotoUrl(photo);
+    const attribution = place.photoAttribution;
+    const c = src && {
+      src,
+      credit: attribution.attribution,
+      link: safeAttributionUrl(attribution.sourceUrl),
+      licenseLink: safeAttributionUrl(attribution.evidenceUrl),
+    };
+    if (c && await loads(c.src)) return c;
   }
   return null;
 }

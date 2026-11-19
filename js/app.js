@@ -5,7 +5,7 @@ import { loadTrail } from './data.js';
 import { auth, validateDisplayName, validateEmail, validatePassword, MIN_PASSWORD, oauthError } from './auth.js';
 import { createUserStore } from './store.js';
 import { mergeRemoteProgress } from './progress-sync.js';
-import { haversine, fmtDist, fmtDur, nearestOnLine, lineLength } from './geo.js';
+import { haversine, fmtDist, fmtDur, nearestOnLine, lineLength, isUsablePosition, isConfidentlyWithinRadius } from './geo.js';
 import { fetchRoute, stepText, currentStep } from './routing.js';
 import { findPhoto, searchPhotosUrl, fileToDataUrl } from './photos.js';
 import { TrailMap } from './map.js';
@@ -25,7 +25,7 @@ const S = {
   user: null, store: null,
   prog: { discovered: [], completed: [] },
   radius: DEFAULT_RADIUS,
-  sim: false, simPos: null, lastGps: null, pos: null, gpsErr: null, watchId: null,
+  sim: false, simPos: null, lastGps: null, gpsSamples: [], pos: null, gpsErr: null, watchId: null,
   revisitId: null,          // a completed stop the user chose to walk back to
   sheetId: null, sheetMode: null,
   showAllShadows: false,
@@ -58,7 +58,8 @@ const canOpen = onMap;
 const stopNo = id => S.path.indexOf(id) + 1;
 const displayName = p => isSideQuest(p.id) || isDisc(p.id) ? p.name : 'Oprirea misterioasă ' + stopNo(p.id);
 const distTo = p => S.pos ? haversine(S.pos.lat, S.pos.lon, p.lat, p.lon) : null;
-const inRadius = p => { const d = distTo(p); return d !== null && d <= S.radius; };
+const inRadius = p => S.sim ? !!S.pos && haversine(S.pos.lat, S.pos.lon, p.lat, p.lon) <= S.radius
+  : isConfidentlyWithinRadius(S.pos, p, S.radius);
 // Directions always point at the current stop, unless the user picked a finished stop to revisit.
 const routeTargetId = () => (S.revisitId && isDone(S.revisitId)) ? S.revisitId : activeId();
 const saveProg = () => S.store && S.store.saveProgress(S.prog);
@@ -190,9 +191,14 @@ async function googleAuth() {
 }
 
 async function signOut() {
+  try {
+    await auth.signOut();
+  } catch (err) {
+    toast(err.message || 'Nu te-am putut deconecta. Contul rămâne activ; încearcă din nou.');
+    return;
+  }
   closeSheet();
   stopGPS();
-  await auth.signOut();
   S.user = null; S.store = null;
   $('#authPass').value = '';
   renderWelcome(); showScreen('welcome');
@@ -240,6 +246,7 @@ function renderRouteChoices() {
 function enterApp(user) {
   S.user = user;
   S.store = createUserStore(user.id);
+  S.store.flushPendingResults();
   S.prog = S.store.loadProgress();
   S.prog.discovered = S.prog.discovered.filter(id => S.byId.has(id));
   S.prog.completed = S.prog.completed.filter(id => S.byId.has(id));
@@ -480,6 +487,7 @@ function mapPadding() {
 function startGPS() {
   if (!('geolocation' in navigator)) { S.gpsErr = 'Browserul tău nu oferă acces la locație.'; updateAll(); return; }
   stopGPS();
+  S.gpsSamples = [];
   S.gpsErr = null;
   try {
     S.watchId = navigator.geolocation.watchPosition(onGPS, onGPSErr, { enableHighAccuracy: true, maximumAge: 2000, timeout: 30000 });
@@ -494,7 +502,10 @@ function onGPS(p) {
   // clearWatch() may not cancel a callback already queued by the browser.
   if (screen !== 'app' || !S.user) return;
   S.gpsErr = null;
-  S.lastGps = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy || 0 };
+  const accuracy = p.coords.accuracy;
+  S.lastGps = { lat: p.coords.latitude, lon: p.coords.longitude, acc: Number.isFinite(accuracy) && accuracy >= 0 ? accuracy : null, time: Date.now() };
+  S.gpsSamples.push(S.lastGps);
+  if (S.gpsSamples.length > 2) S.gpsSamples.shift();
   if (!S.sim) S.pos = S.lastGps;
   updateAll();
 }
@@ -518,10 +529,20 @@ function setSim(on) {
 }
 
 /* ===================== TRAIL LOGIC ===================== */
+function hasStableNearbyFix(p) {
+  if (S.gpsSamples.length < 2) return false;
+  const [a, b] = S.gpsSamples;
+  if (!isUsablePosition(a) || !isUsablePosition(b)) return false;
+  if (!Number.isFinite(a.time) || !Number.isFinite(b.time) || b.time - a.time > 10000 || b.time < a.time) return false;
+  if (haversine(a.lat, a.lon, b.lat, b.lon) > 25) return false;
+  return isConfidentlyWithinRadius(a, p, S.radius)
+    && isConfidentlyWithinRadius(b, p, S.radius);
+}
+
 function checkDiscovery() {
   const id = activeId(); if (!id || isDisc(id)) return;
   const p = place(id);
-  if (!inRadius(p)) return;
+  if (!inRadius(p) || (!S.sim && !hasStableNearbyFix(p))) return;
   S.prog.discovered.push(id); saveProg();
   toast('Ai descoperit: ' + p.name + '!');
   if (!p.trivia.length) completeStop(id);
@@ -531,7 +552,7 @@ function checkSideQuestDiscovery() {
   S.sidequestIds.forEach(id => {
     if (isDisc(id)) return;
     const p = place(id);
-    if (!inRadius(p)) return;
+    if (!inRadius(p) || (!S.sim && !hasStableNearbyFix(p))) return;
     S.prog.discovered.push(id); saveProg();
     toast('Ai găsit o misiune secundară: ' + p.name + '!');
   });
@@ -592,7 +613,8 @@ function maybeReroute() {
   const id = routeTargetId();
   if (!S.pos || !id) { if (routeState.status !== 'idle') clearRoute(); return; }
   const p = place(id);
-  if (haversine(S.pos.lat, S.pos.lon, p.lat, p.lon) < ARRIVED_METERS) { if (routeState.status !== 'arrived') clearRoute('arrived'); return; }
+  if ((S.sim && haversine(S.pos.lat, S.pos.lon, p.lat, p.lon) < ARRIVED_METERS)
+    || (!S.sim && isConfidentlyWithinRadius(S.pos, p, ARRIVED_METERS, 15))) { if (routeState.status !== 'arrived') clearRoute('arrived'); return; }
   const changed = routeState.targetId !== id || routeState.status === 'arrived' || routeState.status === 'idle';
   const age = Date.now() - routeState.t;
   const retry = routeState.status === 'error' && age > 20000;
@@ -649,7 +671,7 @@ function renderRoute() {
   const p = place(id), d = haversine(S.pos.lat, S.pos.lon, p.lat, p.lon);
   empty.hidden = true; body.hidden = false;
   $('#rTitle').textContent = (id === S.revisitId ? 'Revii la ' : stopNo(id) + '. ') + displayName(p);
-  if (routeState.status === 'arrived' || d < ARRIVED_METERS) {
+  if (routeState.status === 'arrived' || (S.sim ? d < ARRIVED_METERS : isConfidentlyWithinRadius(S.pos, p, ARRIVED_METERS, 15))) {
     $('#rSummary').textContent = 'Ai ajuns';
     $('#rNext').textContent = isDisc(id) ? 'Deschide oprirea din listă ca să citești povestea și să răspunzi la întrebări.' : 'Mai fă câțiva pași: locul se dezvăluie imediat.';
     $('#rNote').textContent = ''; $('#rSteps').innerHTML = ''; draw([], []); return;
@@ -755,7 +777,7 @@ function renderList() {
     const li = document.getElementById('pl-' + id); if (!li) return;
     li.classList.toggle('on', disc && inr);
     document.getElementById('st-' + id).textContent = d === null ? ''
-      : disc ? (inr ? (d < ARRIVED_METERS ? 'Ești aici' : 'Se poate deschide · la ' + fmtDist(d)) : 'La ' + fmtDist(d) + ' · se deschide de aproape')
+      : disc ? (inr ? ((S.sim ? d < ARRIVED_METERS : isConfidentlyWithinRadius(S.pos, p, ARRIVED_METERS, 15)) ? 'Ești aici' : 'Se poate deschide · la ' + fmtDist(d)) : 'La ' + fmtDist(d) + ' · se deschide de aproape')
         : 'La ' + fmtDist(d) + ' de tine';
     const op = document.getElementById('op-' + id); if (op) op.disabled = disc ? !inr : false;
   });
@@ -780,7 +802,7 @@ function renderSideQuestList() {
     const tag = done ? '<span class="tag done">Completată</span>' : '<span class="tag cur">Aici</span>';
     return `<li class="place on ${done ? 'done' : ''}">
       <div class="num side">${done ? '✓' : '★'}</div>
-      <div class="pinfo"><strong>${esc(p.name)}</strong>${tag}<div class="sub2">${esc(p.kind || p.category)}</div><div class="status">${d < 25 ? 'Ești aici' : 'La ' + fmtDist(d)}</div></div>
+      <div class="pinfo"><strong>${esc(p.name)}</strong>${tag}<div class="sub2">${esc(p.kind || p.category)}</div><div class="status">${(S.sim ? d < 25 : isConfidentlyWithinRadius(S.pos, p, 25, 15)) ? 'Ești aici' : 'La ' + fmtDist(d)}</div></div>
       <div class="pbtns"><button class="btn primary" data-act="open" data-id="${id}">Deschide</button></div>
     </li>`;
   }).join('');
@@ -867,7 +889,10 @@ async function renderPhoto() {
   if (ph) box.innerHTML = `<img src="${esc(ph.src)}" alt="Fotografie: ${esc(p.name)}">`;
   else box.innerHTML = `<div class="photo-empty"><strong>Încă nu avem o fotografie</strong>
       <a href="${esc(searchPhotosUrl(p))}" target="_blank" rel="noopener">Caută fotografii cu acest loc ↗</a></div>`;
-  const credit = ph ? (ph.link ? `<a href="${esc(ph.link)}" target="_blank" rel="noopener">${esc(ph.credit)}</a>` : esc(ph.credit)) : 'Poți adăuga propria fotografie';
+  const credit = ph ? [
+    ph.link ? `<a href="${esc(ph.link)}" target="_blank" rel="noopener">${esc(ph.credit)}</a>` : esc(ph.credit),
+    ph.licenseLink ? `<a href="${esc(ph.licenseLink)}" target="_blank" rel="noopener">Licență / dovadă</a>` : ''
+  ].filter(Boolean).join(' · ') : 'Poți adăuga propria fotografie';
   cap.innerHTML = `<span>${credit}</span>
     <span class="row" style="gap:6px"><label class="btn sm">${own ? 'Schimbă fotografia' : 'Adaugă fotografia ta'}<input type="file" accept="image/*" hidden id="photoIn"></label>${own ? '<button class="btn sm" data-act="rmphoto">Șterge</button>' : ''}</span>`;
 }
@@ -932,7 +957,12 @@ function afterCompletion(p) {
 // the player's first attempt here; a perfect first attempt is a first blood.
 function recordAttempt(p, q, n) {
   S.store.recordResult(p.id, q.score, n).then(res => {
-    if (!res) { toast('Rezultatul nu a putut fi salvat în cont. Verifică conexiunea.'); return; }
+    if (!res.synced) {
+      toast(res.queued
+        ? 'Rezultatul este păstrat pe acest dispozitiv și așteaptă sincronizarea.'
+        : 'Rezultatul nu a putut fi păstrat. Verifică spațiul disponibil în browser.');
+      return;
+    }
     if (!res.first_attempt || !res.first_blood) return;
     q.firstBlood = true;
     toast('First blood la ' + p.name + '! Puncte duble.');
@@ -1096,6 +1126,7 @@ function bindEvents() {
     else if (document.body.classList.contains('panel-open')) setPanel('');
     else closeMenu();
   });
+  window.addEventListener('online', () => { if (S.store) S.store.flushPendingResults(); });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopGPS();
     else if (screen === 'app' && S.user && !S.sim && S.watchId === null) startGPS();
@@ -1106,8 +1137,17 @@ function bindEvents() {
 }
 
 /* ===================== BOOT ===================== */
+function registerOfflineShell() {
+  if (!window.isSecureContext || !('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('./sw.js').catch(err => {
+    // Offline support is an enhancement; it must never prevent normal startup.
+    console.warn('[offline] app shell registration failed', err);
+  });
+}
+
 async function boot() {
   bindEvents();
+  registerOfflineShell();
   applyTheme();
   measureHeader();
   showScreen('loading');
@@ -1130,7 +1170,15 @@ async function boot() {
   const toRecovery = () => { authMode = 'recovery'; S.user = null; stopGPS(); renderWelcome(); showScreen('welcome'); };
   auth.onPasswordRecovery(toRecovery);
   if (RECOVERY_IN_URL) { toRecovery(); return; }
-  const user = await auth.getCurrentUser();
+  let user;
+  try {
+    user = await auth.getCurrentUser();
+  } catch (e) {
+    if (authMode === 'recovery') return;
+    renderWelcome(); showScreen('welcome');
+    authMsg('Nu am putut verifica dacă ești conectat. Nu înseamnă că ai fost deconectat, iar progresul tău local nu a fost șters. Verifică internetul și reîncarcă pagina.');
+    return;
+  }
   if (authMode === 'recovery') return;
   if (user) enterApp(user);
   else {

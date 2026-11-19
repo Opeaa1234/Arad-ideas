@@ -55,11 +55,52 @@ export function createUserStore(userId) {
       } catch (e) { console.warn('[scores] load failed', e); return null; }
     },
 
-    // Every finished quiz goes to the leaderboard table. Returns
-    // { first_attempt, first_blood, best_score } or null if it failed.
+    // Persist every finished quiz locally before network delivery. The server
+    // must acknowledge the unique submission ID before it is removed.
+    getPendingResults() {
+      try {
+        const rows = JSON.parse(get('score-outbox') || '[]');
+        return Array.isArray(rows) ? rows.filter(r => r && typeof r.id === 'string'
+          && typeof r.placeId === 'string' && Number.isInteger(r.score)
+          && Number.isInteger(r.maxScore)) : [];
+      } catch { return []; }
+    },
+    enqueueResult(placeId, score, maxScore) {
+      const rows = this.getPendingResults();
+      const id = globalThis.crypto?.randomUUID?.()
+        || (globalThis.crypto?.getRandomValues
+          ? [...globalThis.crypto.getRandomValues(new Uint8Array(16))].map(n => n.toString(16).padStart(2, '0')).join('')
+          : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
+      const next = [...rows, { id, placeId: String(placeId), score, maxScore, createdAt: new Date().toISOString() }];
+      return set('score-outbox', JSON.stringify(next)) ? id : null;
+    },
+    async flushPendingResults() {
+      const rows = this.getPendingResults();
+      if (!rows.length) return { sent: 0, pending: 0, results: {} };
+      let sent = 0;
+      const results = {};
+      for (const item of rows) {
+        try {
+          const result = await (await backend()).recordPlaceResult(
+            item.placeId, item.score, item.maxScore, item.id,
+          );
+          results[item.id] = result;
+          const current = this.getPendingResults();
+          if (!set('score-outbox', JSON.stringify(current.filter(r => r.id !== item.id)))) break;
+          sent++;
+        } catch (e) {
+          console.warn('[scores] queued result remains pending', e);
+          break;
+        }
+      }
+      return { sent, pending: this.getPendingResults().length, results };
+    },
     async recordResult(placeId, score, maxScore) {
-      try { return await (await backend()).recordPlaceResult(placeId, score, maxScore); }
-      catch (e) { console.warn('[scores] record failed', e); return null; }
+      const id = this.enqueueResult(placeId, score, maxScore);
+      if (!id) return { queued: false, synced: false };
+      const outcome = await this.flushPendingResults();
+      const result = outcome.results[id];
+      return result ? { ...result, queued: false, synced: true } : { queued: true, synced: false };
     },
 
     getPhoto(placeId) { const v = get('photo:' + placeId); return v && v.startsWith('data:image/') ? v : null; },
