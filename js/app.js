@@ -1134,8 +1134,17 @@ function bindEvents() {
 }
 
 /* ===================== BOOT ===================== */
+function registerOfflineShell() {
+  if (!window.isSecureContext || !('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('./sw.js').catch(err => {
+    // Offline support is an enhancement; it must never prevent normal startup.
+    console.warn('[offline] app shell registration failed', err);
+  });
+}
+
 async function boot() {
   bindEvents();
+  registerOfflineShell();
   applyTheme();
   measureHeader();
   showScreen('loading');
