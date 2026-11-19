@@ -202,6 +202,6 @@ test('every local catalogue photo without verified rights metadata stays hidden'
   assert.ok(unverified.length > 0);
   for (const place of unverified) assert.equal(await findPhoto(place, null), null, place.id);
   const policy = await readFile(new URL('../assets/photos/README.md', import.meta.url), 'utf8');
-  assert.match(policy, /does not make the underlying file private/i);
-  assert.match(policy, /release blocker/i);
+  assert.match(policy, /does not erase older Git history/i);
+  assert.match(policy, /will not display the image/i);
 });
