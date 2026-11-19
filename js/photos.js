@@ -86,6 +86,17 @@ async function commonsPhoto(fileName) {
   return job;
 }
 
+function loads(src) {
+  src = safePhotoUrl(src);
+  if (!src) return Promise.resolve(false);
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(img.naturalWidth > 1);
+    img.onerror = () => resolve(false);
+    img.src = src;
+  });
+}
+
 // Resolves to { src, credit, link, own } or null.
 // Wikipedia lead images are deliberately not used: the summary API's generic
 // page attribution does not establish the individual image's author/licence.
