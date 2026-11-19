@@ -71,5 +71,5 @@ begin
 end;
 $$;
 
-revoke all on function public.record_place_result_idempotent(text, int, int, uuid) from public;
+revoke all on function public.record_place_result_idempotent(text, int, int, uuid) from anon, public;
 grant execute on function public.record_place_result_idempotent(text, int, int, uuid) to authenticated;
