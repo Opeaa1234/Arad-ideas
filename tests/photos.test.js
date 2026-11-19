@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fileToDataUrl, findPhoto, safePhotoUrl, safeAttributionUrl } from '../js/photos.js';
+import { fileToDataUrl, findPhoto, safePhotoUrl, safeAttributionUrl, isReleaseReadyPhotoAttribution } from '../js/photos.js';
 
 function installImageMocks(t, { width = 1600, height = 1200, context = true } = {}) {
   const saved = {
@@ -90,4 +90,38 @@ test('attribution links must be HTTPS and cannot contain credentials', () => {
 test('findPhoto safely handles missing optional photo metadata', async () => {
   assert.equal(await findPhoto({}, null), null);
   assert.equal(await findPhoto({ photo: '' }, null), null);
+});
+
+test('catalogue photo attribution requires author, licence, source and evidence', () => {
+  const valid = {
+    rightsBasis: 'permission',
+    author: 'Photographer',
+    license: 'Permission granted',
+    attribution: 'Photo by Photographer, used with permission',
+    sourceUrl: 'https://example.org/original-photo',
+    evidenceUrl: 'https://example.org/permission-record'
+  };
+  assert.equal(isReleaseReadyPhotoAttribution(valid), true);
+  assert.equal(isReleaseReadyPhotoAttribution({ ...valid, author: '' }), false);
+  assert.equal(isReleaseReadyPhotoAttribution({ ...valid, license: '' }), false);
+  assert.equal(isReleaseReadyPhotoAttribution({ ...valid, sourceUrl: 'http://example.org/photo' }), false);
+  assert.equal(isReleaseReadyPhotoAttribution({ ...valid, evidenceUrl: '' }), false);
+  assert.equal(isReleaseReadyPhotoAttribution({ ...valid, rightsBasis: 'unknown' }), false);
+});
+
+test('unverified local and Wikipedia fallback photos are not displayed', async () => {
+  assert.equal(await findPhoto({
+    photo: 'assets/photos/strand-neptun.jpg',
+    photoCredit: 'Photo by someone'
+  }, null), null);
+  assert.equal(await findPhoto({
+    wikipedia: 'en:Arad'
+  }, null), null);
+});
+
+test('catalogue photo credit text cannot override Commons metadata requirements', async () => {
+  assert.equal(await findPhoto({
+    photo: 'commons:missing-author-file.jpg',
+    photoCredit: 'Approved by team'
+  }, null), null);
 });
