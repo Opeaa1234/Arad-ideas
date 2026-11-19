@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { fetchRoute } from '../js/routing.js';
 import { ROUTERS } from '../js/config.js';
 
@@ -72,4 +73,14 @@ test('every configured route provider uses a walking profile', () => {
     assert.match(router.url, /\\/foot\\//);
     assert.doesNotMatch(router.url, /\\/driving\\//);
   }
+});
+
+
+test('routing failure does not draw a straight line or tell walkers to follow one', async () => {
+  const app = await readFile(new URL('../js/app.js', import.meta.url), 'utf8');
+  const failure = app.match(/else \\{\\s*draw\\(\\[\\], \\[\\]\\);[\\s\\S]*?\\n  \\}/);
+  assert.ok(failure, 'expected a dedicated unavailable-route branch');
+  assert.match(failure[0], /Rută pietonală indisponibilă/);
+  assert.match(failure[0], /Nu urma o linie dreaptă/);
+  assert.doesNotMatch(failure[0], /draw\\(\\[\\], \\[\\[\\[/);
 });
