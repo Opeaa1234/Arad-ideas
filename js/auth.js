@@ -106,11 +106,18 @@ async function toUser(u, b) {
 
 export const auth = {
   async getCurrentUser() {
+    // null means the server positively confirmed there is no session.
+    // A failed request is not evidence that the player has signed out.
+    let b;
+    try { b = await backend(); }
+    catch (e) { console.warn('[auth] session service unavailable', e); throw new Error(OFFLINE); }
     try {
-      const b = await backend();
       const u = await b.getCurrentUser();
       return u ? await toUser(u, b) : null;
-    } catch (e) { console.warn('[auth] no session', e); return null; }
+    } catch (e) {
+      console.warn('[auth] could not verify the current session', e);
+      throw new Error(translate(e));
+    }
   },
 
   async signIn(email, password) {
@@ -143,8 +150,12 @@ export const auth = {
   },
 
   async signOut() {
-    try { const b = await backend(); await b.signOut(); }
-    catch (e) { console.warn('[auth] sign out', e); }
+    const b = await api();
+    try { await b.signOut(); }
+    catch (e) {
+      console.warn('[auth] sign out failed', e);
+      throw new Error(translate(e));
+    }
   },
 
   async requestPasswordReset(email) {
