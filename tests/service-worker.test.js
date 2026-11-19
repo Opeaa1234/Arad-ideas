@@ -20,5 +20,5 @@ test('offline registration is optional and requires a secure context', async () 
   const app = await read('../js/app.js');
   assert.match(app, /function registerOfflineShell\(\)[\s\S]*?window\.isSecureContext[\s\S]*?navigator\.serviceWorker\.register\('\.\/sw\.js'\)/);
   assert.match(app, /registerOfflineShell\(\);/);
-  assert.match(app, /console\\.warn\\(.*app shell registration failed/);
+  assert.match(app, /console\.warn\(.*app shell registration failed/);
 });
