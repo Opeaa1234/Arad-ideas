@@ -106,11 +106,11 @@ export async function signOut() {
 // Returns null when nobody is signed in (instead of throwing).
 export async function getCurrentUser() {
 
-    const { data, error: sessionError } = await supabase.auth.getSession();
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
     // A storage/session lookup error is not proof that the visitor is signed out.
     if (sessionError) throw sessionError;
-    if (!data.session) return null;
+    if (!sessionData.session) return null;
 
     const { data, error } = await supabase.auth.getUser();
 
